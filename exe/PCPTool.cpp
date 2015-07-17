@@ -78,6 +78,7 @@ PcpToolGetHelp(
 
     wprintf(L"\nPlatform Attestation:\n");
     wprintf(L" GetPlatformAttestation [aik name] {attestation file} {nonce} {aikAuth}\n");
+	wprintf(L" AikQuote [aik name] {attestation file} {nonce} {aikAuth}\n");
     wprintf(L" CreatePlatformAttestationFromLog [log file] {attestation file} {aik name}\n");
     wprintf(L" DisplayPlatformAttestationFile [attestation file]\n");
     wprintf(L" ValidatePlatformAttestation [attestation file] [aikpub file] {nonce}\n");
@@ -233,6 +234,10 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolGetPlatformAttestation(argc, argv);
         }
+		else if (!_wcsicmp(command, L"aikquote"))
+		{
+			hr = PcpToolAikQuote(argc, argv);
+		}
         else if(!_wcsicmp(command, L"createplatformattestationfromlog"))
         {
             hr = PcpToolCreatePlatformAttestationFromLog(argc, argv);

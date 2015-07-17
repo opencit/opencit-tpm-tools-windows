@@ -4590,6 +4590,201 @@ Cleanup:
 }
 
 HRESULT
+PcpToolAikQuote(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+/*++
+This function will create an AIK signed platform attestation blob. In this case
+the attestation is signed and nonces are supported. This attestation is tamper
+proof.
+--*/
+{
+	HRESULT hr = S_OK;
+	NCRYPT_PROV_HANDLE hProv = NULL;
+	NCRYPT_KEY_HANDLE hAik = NULL;
+	PCWSTR aikName = NULL;
+	PCWSTR attestationFileName = NULL;
+	PCWSTR nonceHex = NULL;
+	PCWSTR aikAuthValue = NULL;
+	PBYTE pbAttestation = NULL;
+	UINT32 cbAttestation = 0;
+	BYTE nonceDigest[20] = { 0 };
+	UINT32 result = 0;
+	PPCP_PLATFORM_ATTESTATION_BLOB pAttestationBlob = NULL;
+
+	WCHAR aikLabel[256] = { 0 };
+	BYTE nonce[20] = { 0 };
+	UINT32 cnonce = 0;
+	WCHAR attestationFile[512] = { 0 };
+
+	// Paranoid check
+	if (argc < 2)
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Aik name
+	if (argc > 2)
+	{
+		aikName = argv[2];
+		hexStringToWstr(aikName, aikLabel);
+		//wprintf(L"%s %s\n", aikName, aikLabel);
+	}
+	else
+	{
+		wprintf(L"%s %s [aik name] {attestation file} {nonce} {aikauth}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Optional parameter: Attestation file
+	if (argc > 3)
+	{
+		attestationFileName = argv[3];
+		hexStringToWstr(attestationFileName, attestationFile);
+		//wprintf(L"attestation blob filename: %s\n", attestationFile);
+	}
+
+	// Optional parameter: Nonce
+	if (argc > 4)
+	{
+		nonceHex = argv[4];
+		cnonce = hexStringToByteArray(nonceHex, nonce);
+		if (FAILED(hr = TpmAttiShaHash(
+			BCRYPT_SHA1_ALGORITHM,
+			NULL,
+			0,
+			nonce,
+			cnonce,
+			nonceDigest,
+			sizeof(nonceDigest),
+			&result)))
+		{
+			goto Cleanup;
+		}
+	}
+
+	// Optional parameter: aik auth
+	if (argc > 5)
+	{
+		aikAuthValue = argv[5];
+	}
+
+	if (wcslen(aikName) > 0)
+	{
+		// Open AIK
+		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
+			&hProv,
+			MS_PLATFORM_CRYPTO_PROVIDER,
+			0))))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
+			hProv,
+			&hAik,
+			aikLabel,
+			0,
+			0))))
+		{
+			goto Cleanup;
+		}
+		if ((aikAuthValue != NULL) && (wcslen(aikAuthValue) != 0))
+		{
+			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+				hAik,
+				NCRYPT_PIN_PROPERTY,
+				(PBYTE)aikAuthValue,
+				(DWORD)((wcslen(aikAuthValue) + 1) * sizeof(WCHAR)),
+				0))))
+			{
+				goto Cleanup;
+			}
+		}
+	}
+
+	if (FAILED(hr = TpmAttGeneratePlatformAttestation(
+		hAik,
+		0x0000f77f, // Default PCR mask PCR[0-6, 8-10, 12-15]
+		(nonce) ? nonceDigest : NULL,
+		(nonce) ? sizeof(nonceDigest) : 0,
+		NULL,
+		0,
+		&cbAttestation)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbAttestation, cbAttestation)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = TpmAttGeneratePlatformAttestation(
+		hAik,
+		0x0000f77f, // Default PCR mask PCR[0-6, 8-10, 12-15]
+		(nonce) ? nonceDigest : NULL,
+		(nonce) ? sizeof(nonceDigest) : 0,
+		pbAttestation,
+		cbAttestation,
+		&cbAttestation)))
+	{
+		goto Cleanup;
+	}
+
+	/* The attestation blob has following structure
+	* 1. header
+	* 	#define PCP_PLATFORM_ATTESTATION_MAGIC 'SDAP' // Platform Attestation Data Structure
+	*	typedef struct _PCP_PLATFORM_ATTESTATION_BLOB {
+	*		ULONG Magic;
+	*		ULONG Platform;
+	*		ULONG HeaderSize;
+	*		ULONG cbPcrValues;
+	*		ULONG cbQuote;
+	*		ULONG cbSignature;
+	*		ULONG cbLog;
+	*	} PCP_PLATFORM_ATTESTATION_BLOB, *PPCP_PLATFORM_ATTESTATION_BLOB;
+	* 2. contents
+	*	a. pcrvalues for 24 PCR registers size 20*24
+	*   b. Quote with structure TPM_QUOTE2_INFO
+	*   c. signature with 256 bytes
+	*   d. Measurement log
+	*/
+
+	/* output the needed info for CIT */
+	pAttestationBlob = (PPCP_PLATFORM_ATTESTATION_BLOB)pbAttestation;
+
+	// Export attestation blob
+	if (attestationFileName != NULL)
+	{
+		if (FAILED(hr = PcpToolWriteFile(
+			attestationFile,
+			pbAttestation,
+			cbAttestation)))
+		{
+			goto Cleanup;
+		}
+	}
+
+Cleanup:
+	if (hAik != NULL)
+	{
+		NCryptFreeObject(hAik);
+		hAik = NULL;
+	}
+	if (hProv != NULL)
+	{
+		NCryptFreeObject(hProv);
+		hProv = NULL;
+	}
+	ZeroAndFree((PVOID*)&pbAttestation, cbAttestation);
+	PcpToolCallResult(L"PcpToolGetPlatformAttestation()", hr);
+	return hr;
+}
+
+HRESULT
 PcpToolGetPlatformCounters(
     int argc,
     _In_reads_(argc) WCHAR* argv[]

@@ -341,6 +341,12 @@ PcpToolGetPlatformAttestation(
     );
 
 HRESULT
+PcpToolAikQuote(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolGetPlatformCounters(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
