@@ -95,6 +95,13 @@ PcpToolGetHelp(
     wprintf(L"\nKey Hostage:\n");
     wprintf(L" WrapKey [cert Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n");
     wprintf(L" ImportPlatformKey [key file] [key name] {cert file}\n");
+
+	wprintf(L"\nNVRAM:\n");
+	wprintf(L" NVInfo {nvIndex in hex}\n");
+	wprintf(L" NVRead [key file] [key name] {cert file}\n");
+	wprintf(L" NVWrite\n");
+	wprintf(L" NVDefine\n");
+	wprintf(L" NVRelease\n");
 }
 
 int __cdecl wmain(_In_ int argc,
@@ -294,10 +301,26 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolPrivacyCaChallenge(argc, argv);
         }
-        else if(!_wcsicmp(command, L"privacycaactivate"))
+        else if(!_wcsicmp(command, L"nvinfo"))
         {
-            hr = PcpToolPrivacyCaActivate(argc, argv);
+            hr = PcpToolNVInfo(argc, argv);
         }
+		else if (!_wcsicmp(command, L"nvread"))
+		{
+			hr = PcpToolNVRead(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"nvwrite"))
+		{
+			hr = PcpToolNVWrite(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"nvdefine"))
+		{
+			hr = PcpToolNVDefine(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"nvrelease"))
+		{
+			hr = PcpToolNVRelease(argc, argv);
+		}
         else
         {
             wprintf(L"Command not found.");

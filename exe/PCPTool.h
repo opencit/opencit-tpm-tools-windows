@@ -442,11 +442,41 @@ PcpToolPrivacyCaChallenge(
     _In_reads_(argc) WCHAR* argv[]
     );
 
-    HRESULT
+HRESULT
 PcpToolPrivacyCaActivate(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
     );
+
+HRESULT 
+PcpToolNVInfo(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	);
+
+HRESULT 
+PcpToolNVRead(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	);
+
+HRESULT 
+PcpToolNVWrite(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	);
+
+HRESULT 
+PcpToolNVDefine(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	);
+
+HRESULT 
+PcpToolNVRelease(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	);
 
 // PCPTool.cpp
 

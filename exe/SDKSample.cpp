@@ -5403,7 +5403,7 @@ proof.
                                    hAik,
                                    (nonce) ? nonceDigest : NULL,
                                    (nonce) ? sizeof(nonceDigest) : 0,
-                                   pbAttestation,
+                                   pbAttestation, 
                                    cbAttestation)))
     {
         goto Cleanup;
@@ -8475,4 +8475,63 @@ Cleanup:
     ZeroAndFree((PVOID*)&pbActivationBlob, cbActivationBlob);
     PcpToolCallResult(L"PcpToolActivateAIKCert()", hr);
     return hr;
+}
+
+HRESULT PcpToolNVInfo(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	)
+{
+	HRESULT hr = 0;
+	BYTE nvinfo[512] = { 0 };
+	UINT32 cbNvinfo = 512;
+	UINT32 cbInfo = 0;
+	UINT32 nvIndex = 0;
+
+	// Optional Parameter: nv_index
+	if (argc > 2)
+	{
+		if (swscanf_s(argv[2], L"%x", &nvIndex) == 0)
+		{
+			wprintf(L"%s %s [size] {nv_index in hex}\n", argv[0], argv[1]);
+			goto Cleanup;
+		}
+		//wprintf(L" argv[2]: %s, %x, %u", argv[2], nvIndex, nvIndex);
+	}
+
+	hr = TpmNVInfo(nvIndex, nvinfo, cbNvinfo, &cbInfo);
+Cleanup: 
+	return hr;
+}
+
+HRESULT PcpToolNVRead(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	)
+{
+	return 0;
+}
+
+HRESULT PcpToolNVWrite(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	)
+{
+	return 0;
+}
+
+HRESULT PcpToolNVDefine(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	)
+{
+	return 0;
+}
+
+HRESULT PcpToolNVRelease(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	)
+{
+	return 0;
 }

@@ -574,6 +574,13 @@ DllExport HRESULT TpmAttWrapPlatformKey(
     _Out_ PUINT32 pcbResult
     );
 
+DllExport HRESULT TpmNVInfo(
+	UINT32 nvIndex,
+	_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pcbResult
+	);
+
 #if defined(__cplusplus)
 }
 #endif

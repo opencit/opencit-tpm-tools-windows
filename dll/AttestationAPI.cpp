@@ -3305,3 +3305,99 @@ Cleanup:
     return hr;
 }
 
+/// <summary>
+/// Get the TPM_NV_LIST
+/// </summary>
+/// <param name="hAik">AIK key handle, fully authorized if required.</param>
+/// <param name="pcrMask">Filter for events.</param>
+/// <param name="pbNonce">pointer to Nonce provided to be included in signature.</param>
+/// <param name="cbNonce">size of Nonce provided to be included in signature.</param>
+/// <param name="pbOutput">Upon successful return, contains the attestation blob.</param>
+/// <param name="cbOutput">input size of attestation blob buffer.</param>
+/// <param name="pcbResult">output size of attestation blob.</param>
+/// <returns>
+///  S_OK - Success.
+///  E_INVALIDARG - Parameter error.
+///  E_FAIL - Internal consistency error.
+///  Others as propagated by called functions.
+/// </returns>
+DllExport HRESULT TpmNVInfo(
+	UINT32 nvIndex,
+	_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pcbResult
+	)
+{
+	HRESULT hr = 0;
+	TBS_CONTEXT_PARAMS2 contextParams;
+	TBS_HCONTEXT hPlatformTbsHandle = 0;
+	UINT32 tpmVersion;
+	UINT32 list_only = 1;
+	UINT32 indexFound = 0;
+	
+	if (nvIndex > 0)
+		list_only = 0;
+
+	// Get TPM version to select implementation
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		goto Cleanup;
+	}
+
+	//get the tbs handle
+	contextParams.version = TBS_CONTEXT_VERSION_TWO;
+	contextParams.asUINT32 = 0;
+	contextParams.includeTpm12 = 1;
+	contextParams.includeTpm20 = 1;
+	if (FAILED(hr = Tbsi_Context_Create((PCTBS_CONTEXT_PARAMS)&contextParams, &hPlatformTbsHandle)))
+	{
+		goto Cleanup;
+	}
+
+	//wprintf(L" Platform TBS Handle opened successfully\n");
+
+	//dispatch based on TPM version
+	if (tpmVersion == TPM_VERSION_12)
+	{
+		// 0x0000000D TPM_CAP_NV_LIST 
+		if (FAILED(hr = GetCapability12(hPlatformTbsHandle, 0x0000000D, NULL, 0, pbOutput, cbOutput, pcbResult)))
+		{
+			goto Cleanup;
+		}
+		//wprintf(L" GetCapability12 returns successfully\n");
+		//wprintf(L" Return size is: %d\n", *pcbResult);
+
+		UINT32 cursor = 0;
+		for (int i = 0; i < *pcbResult / sizeof(UINT32); i++) {
+			UINT32 nvi;
+			ReadBigEndian(pbOutput, *pcbResult, &cursor, &nvi);
+			if (nvIndex == nvi || list_only==1) {
+				indexFound = 1;
+				wprintf(L"NVRAM index found	: 0x%08x (%d)\n", nvi, nvi);
+			}
+		}
+		if (nvIndex>0 && indexFound == 0) {
+			wprintf(L"index 0x%08x not found\n", nvIndex);
+		}
+		// 0x00000011 TPM_CAP_NV_INDEX - to get the TPM_NV_DATA_PUBLIC info of the index
+
+	}
+	else if (tpmVersion == TPM_VERSION_20)
+	{
+		//Not implemented yet
+	}
+	else
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+
+Cleanup:
+	// Close the TBS handle if we opened it in here
+	if (hPlatformTbsHandle != NULL)
+	{
+		Tbsip_Context_Close(hPlatformTbsHandle);
+		hPlatformTbsHandle = NULL;
+	}
+	return hr;
+}

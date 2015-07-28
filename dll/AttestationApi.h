@@ -178,6 +178,16 @@ WrapPlatformKey12(
     _Out_ PUINT32 pcbResult
     );
 
+HRESULT
+GetCapability12(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 capArea,
+	_In_reads_(cbNonce) PBYTE pbSubCap,
+	UINT32 cbSubCap,
+	_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pcbResult
+);
 // TPM20.cpp
 
 HRESULT

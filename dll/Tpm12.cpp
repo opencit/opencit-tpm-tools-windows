@@ -3444,3 +3444,306 @@ Cleanup:
     }
     return hr;
 }
+
+
+HRESULT
+GetCapability12(
+TBS_HCONTEXT hPlatformTbsHandle,
+UINT32 capArea,
+_In_reads_(cbNonce) PBYTE pbSubCap,
+UINT32 cbSubCap,
+_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+UINT32 cbOutput,
+_Out_ PUINT32 pcbResult
+)
+{
+	HRESULT hr = S_OK;
+	UINT32 cbRequired = 0;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	UINT32 cbRsp = sizeof(rsp);
+	UINT32 cursorCmd = 0;
+	UINT32 cursorParamHash = 0;
+	UINT32 cursorRsp = 0;
+	UINT16 rspTag = 0;
+	UINT16 certifyType = 0;
+	UINT32 paramSize = 0;
+	UINT32 returnCode = 0;
+	UINT32 respSize = 0;
+	PBYTE pbResp = NULL;
+
+
+	// Check the parameters
+	if ((hPlatformTbsHandle == NULL) ||
+		(pcbResult == NULL))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	*pcbResult = 0;
+
+	//command buffer
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c1))) //TPM_TAG_RQU_COMMAND
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x00000012))) //paramSize (0x12 if subCapSize is 0)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x00000065))) //TPM_ORD_GetCapability
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)capArea))) //TPM_CAPABILITY_AREA
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)cbSubCap))) //subCapSize
+	{
+		goto Cleanup;
+	}
+
+	if (cbSubCap > 0) {
+		if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbSubCap, cbSubCap))) //subCap
+		{
+			goto Cleanup;
+		}
+		// Set the command size
+		ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+	}
+
+	// Send the command to the TPM
+	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
+		TBS_COMMAND_LOCALITY_ZERO,
+		TBS_COMMAND_PRIORITY_NORMAL,
+		cmd,
+		cursorCmd,
+		rsp,
+		&cbRsp)))
+	{
+		goto Cleanup;
+	}
+
+	// Parse the response
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &rspTag))) // tag
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &paramSize))) // paramSize
+	{
+		goto Cleanup;
+	}
+	if (paramSize != cbRsp)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnCode))) // ReturnCode
+	{
+		goto Cleanup;
+	}
+	if (returnCode != 0)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &respSize))) // respSize
+	{
+		goto Cleanup;
+	}
+	*pcbResult = respSize;
+	if (respSize > 0) {
+
+		if ((pbOutput == NULL) || (cbOutput == 0))
+		{
+			*pcbResult = cbRequired;
+			goto Cleanup;
+		}
+		if (cbOutput < respSize)
+		{
+			hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+			*pcbResult = cbRequired;
+			goto Cleanup;
+		}
+		if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &pbResp, respSize))) // finally read the capability response
+		{
+			goto Cleanup;
+		}
+		if (memcpy_s(pbOutput, cbOutput, pbResp, respSize))
+		{
+			hr = E_FAIL;
+			goto Cleanup;
+		}
+	}
+Cleanup:
+	return hr;
+}
+
+HRESULT
+nvDefineSpace12(
+TBS_HCONTEXT hPlatformTbsHandle,
+UINT32 capArea,
+_In_reads_(cbEncAuth) PBYTE pbEncAuth,
+UINT32 cbEncAuth,
+_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+UINT32 cbOutput,
+_Out_ PUINT32 pcbResult
+)
+{
+	HRESULT hr = S_OK;
+	UINT32 cbRequired = 0;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	UINT32 cbRsp = sizeof(rsp);
+	UINT32 cursorCmd = 0;
+	UINT32 cursorParamHash = 0;
+	UINT32 cursorRsp = 0;
+	UINT16 rspTag = 0;
+	UINT16 certifyType = 0;
+	UINT32 paramSize = 0;
+	UINT32 returnCode = 0;
+	UINT32 respSize = 0;
+	PBYTE pbResp = NULL;
+
+	UINT32 authHandle = 0;
+	BYTE authBuffer[3 * SHA1_DIGEST_SIZE + sizeof(BYTE)] = { 0 };
+	PBYTE pParamDigest = &authBuffer[0];
+	PBYTE pNonceEven = &authBuffer[SHA1_DIGEST_SIZE];
+	PBYTE pNonceOdd = &authBuffer[2 * SHA1_DIGEST_SIZE];
+	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
+	UINT32 cbOwnerAuth = 0;
+	PBYTE pbOwnerAuth = NULL;
+	BYTE  pbAuthDigest[SHA1_DIGEST_SIZE] = { 0 };
+	UINT cbAuthDigest;
+
+	// Check the parameters
+	if ((hPlatformTbsHandle == NULL) ||
+		(pcbResult == NULL))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	*pcbResult = 0;
+
+	//get the ownerAuth first
+	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_ADMIN, NULL, &cbOwnerAuth))) {
+		goto Cleanup;
+	}
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbOwnerAuth, cbOwnerAuth)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_ADMIN, pbOwnerAuth, &cbOwnerAuth))) {
+		goto Cleanup;
+	}
+	// hash the ownerauth
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		&pbOwnerAuth[0],
+		cbOwnerAuth,
+		pbAuthDigest,
+		cbAuthDigest,
+		&cbAuthDigest)))
+	{
+		goto Cleanup;
+	}
+
+	// Start OIAP session
+	if (FAILED(hr = StartOIAPSession(hPlatformTbsHandle, &authHandle, pNonceEven, pNonceOdd)))
+	{
+		goto Cleanup;
+	}
+
+	//command buffer
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c2))) //TPM_TAG_RQU_AUTH1_COMMAND
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x0000004b))) //paramSize (0x4B if TPM_NV_DATA_PUBLIC is 0)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x000000cc))) //TPM_ORD_NV_DefineSpace
+	{
+		goto Cleanup;
+	}
+
+	//MISSING pubInfo (TPM_NV_DATA_PUBLIC)
+
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbEncAuth, (UINT32)20))) //encAuth (TPM_ENCAUTH)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)authHandle))) //authHandle for ownerAuth
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pNonceOdd, SHA1_DIGEST_SIZE))) //nonceOdd
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, *pContinueAuthSession))) //continueAuthSession
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbAuthDigest, SHA1_DIGEST_SIZE))) //ownerAuth
+	{
+		goto Cleanup;
+	}
+
+	// Set the command size
+	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+
+	// Send the command to the TPM
+	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
+		TBS_COMMAND_LOCALITY_ZERO,
+		TBS_COMMAND_PRIORITY_NORMAL,
+		cmd,
+		cursorCmd,
+		rsp,
+		&cbRsp)))
+	{
+		goto Cleanup;
+	}
+
+	// Parse the response
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &rspTag))) // tag
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &paramSize))) // paramSize
+	{
+		goto Cleanup;
+	}
+	if (paramSize != cbRsp)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnCode))) // ReturnCode
+	{
+		goto Cleanup;
+	}
+	if (returnCode != 0)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, SHA1_DIGEST_SIZE))) // nonceEven
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, 1))) // continueAuthSession
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, SHA1_DIGEST_SIZE))) // ownerAuth
+	{
+		goto Cleanup;
+	}
+
+Cleanup:
+	return hr;
+}
