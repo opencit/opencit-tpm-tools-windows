@@ -96,12 +96,13 @@ PcpToolGetHelp(
     wprintf(L" WrapKey [cert Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n");
     wprintf(L" ImportPlatformKey [key file] [key name] {cert file}\n");
 
-	wprintf(L"\nNVRAM:\n");
+	wprintf(L"\nNVRAM: (the commands below are implemented specially for Intel TA, therefore may not work for generic cases\n");
 	wprintf(L" NVInfo {nvIndex in hex}\n");
-	wprintf(L" NVRead [key file] [key name] {cert file}\n");
-	wprintf(L" NVWrite\n");
-	wprintf(L" NVDefine [index] [size] [nvramPassword] [permissions]\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
+	wprintf(L" NVDefine [index] [size] [nvramPassword] {permissions}\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
 	wprintf(L" NVRelease [index]\n");
+	wprintf(L" NVWrite [nvIndex] [nvramPassword] [data in hex]\n");
+	wprintf(L" NVRead [nvIndex]\n");
+
 }
 
 int __cdecl wmain(_In_ int argc,
