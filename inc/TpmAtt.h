@@ -581,6 +581,13 @@ DllExport HRESULT TpmNVInfo(
 	_Out_ PUINT32 pcbResult
 	);
 
+DllExport HRESULT TpmNVDefineSpace(
+	UINT32 nvIndex,
+	UINT32 indexSize,
+	PBYTE nvAuth,
+	PCWSTR permissions
+	);
+
 #if defined(__cplusplus)
 }
 #endif

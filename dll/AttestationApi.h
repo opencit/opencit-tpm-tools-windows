@@ -188,6 +188,49 @@ GetCapability12(
 	UINT32 cbOutput,
 	_Out_ PUINT32 pcbResult
 );
+
+HRESULT
+NvDefineSpace12(
+	_In_ TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 index,
+	UINT32 indexSize,
+	_In_reads_(cbOwnerAuth) PBYTE pbOwnerAuth,
+	UINT32 cbOwnerAuth,
+	_In_reads_(cbIndexAuth) PBYTE pbIndexAuth,
+	UINT32 cbIndexAuth,
+	UINT32 permissions
+	);
+
+HRESULT
+CreateNvPublic(
+	UINT32 nvIndex,
+	UINT32 nvSize,
+	UINT32 attributes,
+	_Out_writes_to_opt_(cbOutput, *pSize) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pSize
+);
+
+BOOLEAN isEncryptAuthSupported(TBS_HCONTEXT hPlatformTbsHandle, UINT32 encType);
+
+HRESULT
+StartOSAPSession(
+	_In_ TBS_HCONTEXT hPlatformTbsHandle,
+	UINT16 entityType,
+	UINT32 entityValue,
+	_Out_ PUINT32 pSessionHandle,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pEvenNonce,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pOddNonce,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pEvenNonceOSAP,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pOddNonceOSAP
+);
+
+HRESULT
+changeAuthOwner12(
+_In_ TBS_HCONTEXT hPlatformTbsHandle,
+_In_reads_(cbOwnerAuth) PBYTE pbOwnerAuth,
+UINT32 cbOwnerAuth
+);
 // TPM20.cpp
 
 HRESULT

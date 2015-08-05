@@ -3450,7 +3450,7 @@ HRESULT
 GetCapability12(
 TBS_HCONTEXT hPlatformTbsHandle,
 UINT32 capArea,
-_In_reads_(cbNonce) PBYTE pbSubCap,
+_In_reads_(cbSubCap) PBYTE pbSubCap,
 UINT32 cbSubCap,
 _Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
 UINT32 cbOutput,
@@ -3581,120 +3581,72 @@ Cleanup:
 }
 
 HRESULT
-nvDefineSpace12(
-TBS_HCONTEXT hPlatformTbsHandle,
-UINT32 capArea,
-_In_reads_(cbEncAuth) PBYTE pbEncAuth,
-UINT32 cbEncAuth,
-_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
-UINT32 cbOutput,
-_Out_ PUINT32 pcbResult
+StartOSAPSession(
+	_In_ TBS_HCONTEXT hPlatformTbsHandle,
+	UINT16 entityType,
+	UINT32 entityValue,
+	_Out_ PUINT32 pSessionHandle,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pEvenNonce,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pOddNonce,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pEvenNonceOSAP,
+	_Out_writes_(SHA1_DIGEST_SIZE) PBYTE pOddNonceOSAP
 )
 {
 	HRESULT hr = S_OK;
-	UINT32 cbRequired = 0;
-	BYTE cmd[0x200] = { 0 };
+	BYTE cmd[200] = { 0 };
+	UINT32 cursorCmd = 0;
 	BYTE rsp[0x200] = { 0 };
 	UINT32 cbRsp = sizeof(rsp);
-	UINT32 cursorCmd = 0;
-	UINT32 cursorParamHash = 0;
-	UINT32 cursorRsp = 0;
-	UINT16 rspTag = 0;
-	UINT16 certifyType = 0;
+	UINT32 cursor = 0;
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
-	UINT32 respSize = 0;
-	PBYTE pbResp = NULL;
+	BCRYPT_ALG_HANDLE hRngAlg = NULL;
+	PBYTE pbNonce = NULL;
 
-	UINT32 authHandle = 0;
-	BYTE authBuffer[3 * SHA1_DIGEST_SIZE + sizeof(BYTE)] = { 0 };
-	PBYTE pParamDigest = &authBuffer[0];
-	PBYTE pNonceEven = &authBuffer[SHA1_DIGEST_SIZE];
-	PBYTE pNonceOdd = &authBuffer[2 * SHA1_DIGEST_SIZE];
-	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
-	UINT32 cbOwnerAuth = 0;
-	PBYTE pbOwnerAuth = NULL;
-	BYTE  pbAuthDigest[SHA1_DIGEST_SIZE] = { 0 };
-	UINT cbAuthDigest;
-
-	// Check the parameters
-	if ((hPlatformTbsHandle == NULL) ||
-		(pcbResult == NULL))
+	if ((pSessionHandle == NULL) ||
+		(pEvenNonce == NULL) || (pOddNonce == NULL) ||
+		(pEvenNonceOSAP == NULL) || (pOddNonceOSAP == NULL))
 	{
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
-	*pcbResult = 0;
+	// Make OACR happy
+	memset(pOddNonce, 0x00, SHA1_DIGEST_SIZE);
+	memset(pOddNonceOSAP, 0x00, SHA1_DIGEST_SIZE);
 
-	//get the ownerAuth first
-	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_ADMIN, NULL, &cbOwnerAuth))) {
-		goto Cleanup;
-	}
-	if (FAILED(hr = AllocateAndZero((PVOID*)&pbOwnerAuth, cbOwnerAuth)))
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_ADMIN, pbOwnerAuth, &cbOwnerAuth))) {
-		goto Cleanup;
-	}
-	// hash the ownerauth
-	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptOpenAlgorithmProvider(
+		&hRngAlg,
+		BCRYPT_RNG_ALGORITHM,
 		NULL,
-		0,
-		&pbOwnerAuth[0],
-		cbOwnerAuth,
-		pbAuthDigest,
-		cbAuthDigest,
-		&cbAuthDigest)))
+		0))))
 	{
 		goto Cleanup;
 	}
-
-	// Start OIAP session
-	if (FAILED(hr = StartOIAPSession(hPlatformTbsHandle, &authHandle, pNonceEven, pNonceOdd)))
+	//Generate nonceOdd
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptGenRandom(
+		hRngAlg,
+		pOddNonce,
+		SHA1_DIGEST_SIZE,
+		0))))
 	{
 		goto Cleanup;
 	}
-
-	//command buffer
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c2))) //TPM_TAG_RQU_AUTH1_COMMAND
+	//Generate nonceOddOSAP
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptGenRandom(
+		hRngAlg,
+		pOddNonceOSAP,
+		SHA1_DIGEST_SIZE,
+		0))))
 	{
 		goto Cleanup;
 	}
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x0000004b))) //paramSize (0x4B if TPM_NV_DATA_PUBLIC is 0)
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x000000cc))) //TPM_ORD_NV_DefineSpace
-	{
-		goto Cleanup;
-	}
-
-	//MISSING pubInfo (TPM_NV_DATA_PUBLIC)
-
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbEncAuth, (UINT32)20))) //encAuth (TPM_ENCAUTH)
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)authHandle))) //authHandle for ownerAuth
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pNonceOdd, SHA1_DIGEST_SIZE))) //nonceOdd
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, *pContinueAuthSession))) //continueAuthSession
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbAuthDigest, SHA1_DIGEST_SIZE))) //ownerAuth
-	{
-		goto Cleanup;
-	}
-
-	// Set the command size
-	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+	//construct the command
+	WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c1); //tag: TPM_TAG_RQU_COMMAND
+	WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x24); //paramSize
+	WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x0000000b); //TPM_ORD_OSAP
+	WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)entityType); //entityType
+	WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)entityValue); //entityValue
+	WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pOddNonceOSAP, (UINT32)SHA1_DIGEST_SIZE); //nonceOddOSAP
 
 	// Send the command to the TPM
 	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
@@ -3709,7 +3661,270 @@ _Out_ PUINT32 pcbResult
 	}
 
 	// Parse the response
-	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &rspTag))) // tag
+	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursor, sizeof(UINT16)))) // skip tag
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursor, &paramSize))) // paramSize
+	{
+		goto Cleanup;
+	}
+	if (paramSize != cbRsp)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursor, &returnCode))) // ReturnCode
+	{
+		goto Cleanup;
+	}
+	if (returnCode != 0)
+	{
+		hr = E_FAIL;
+		wprintf(L"OSAP invalid return with code: 0x%x\n", returnCode);
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursor, pSessionHandle))) // Session Handle
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursor, &pbNonce, SHA1_DIGEST_SIZE))) // evenNonce
+	{
+		goto Cleanup;
+	}
+	memcpy_s(pEvenNonce, SHA1_DIGEST_SIZE, pbNonce, SHA1_DIGEST_SIZE);
+
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursor, &pbNonce, SHA1_DIGEST_SIZE))) // evenNonceOSAP
+	{
+		goto Cleanup;
+	}
+	memcpy_s(pEvenNonceOSAP, SHA1_DIGEST_SIZE, pbNonce, SHA1_DIGEST_SIZE);
+
+
+Cleanup:
+	if (hRngAlg != NULL)
+	{
+		BCryptCloseAlgorithmProvider(hRngAlg, 0);
+		hRngAlg = NULL;
+	}
+	return hr;
+}
+
+HRESULT
+NvDefineSpace12(
+TBS_HCONTEXT hPlatformTbsHandle,
+UINT32 index,
+UINT32 indexSize,
+_In_reads_(cbOwnerAuth) PBYTE pbOwnerAuth,
+UINT32 cbOwnerAuth,
+_In_reads_(cbIndexAuth) PBYTE pbIndexAuth,
+UINT32 cbIndexAuth,
+UINT32 permissions
+)
+{
+	HRESULT hr = S_OK;
+	UINT32 cbRequired = 0;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	BYTE paramHash[0x200] = { 0 };
+	UINT32 cbRsp = sizeof(rsp);
+	UINT32 cursorCmd = 0;
+	UINT32 cursorParamHash = 0;
+	UINT32 cursorRsp = 0;
+	UINT32 authHandle = 0;
+	BYTE pcrProfile[] = { 0x00, 0x03, 0x7f, 0xf7, 0x00 };
+
+	//digestParameters
+	BYTE authBuffer[3 * SHA1_DIGEST_SIZE + sizeof(BYTE)] = { 0 };
+	PBYTE pParamDigest = &authBuffer[0];
+	PBYTE pNonceEven = &authBuffer[SHA1_DIGEST_SIZE];
+	PBYTE pNonceOdd = &authBuffer[2 * SHA1_DIGEST_SIZE];
+	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
+
+	//OSAP nonces for shared secret
+	BYTE osapNonces[2 * SHA1_DIGEST_SIZE] = { 0 };
+	PBYTE pNonceEvenOSAP = &osapNonces[0];
+	PBYTE pNonceOddOSAP = &osapNonces[SHA1_DIGEST_SIZE];
+	BYTE encAuthBuffer[2 * SHA1_DIGEST_SIZE] = { 0 };
+	PBYTE osapSecret = &encAuthBuffer[0];
+	BYTE encAuth[SHA1_DIGEST_SIZE] = { 0 };
+	UINT32 cbEncAuth = 0;
+
+	UINT32 paramSize = 0;
+	UINT32 returnCode = 0;
+	UINT16 returnTag = 0;
+	PBYTE pbPcrData = NULL;
+	UINT32 cbPcrData = 26;
+	PBYTE pbVersionInfo = NULL;
+	UINT32 cbVersionInfo = 0;
+	PBYTE pbSignature = NULL;
+	UINT32 cbSignature = 0;
+	PBYTE pResponseAuth = NULL;
+	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
+
+	BYTE  pbAuthDigest[SHA1_DIGEST_SIZE] = { 0 };
+	UINT32 cbAuthDigest;
+	BYTE pbNvDataPublic[0x200] = { 0 };
+	UINT32 cbNvDataPublic = 0x200;
+	UINT32 dataPubSize = 0;
+	UINT32 cbSecret = 0;
+
+	// Check the parameters
+	if ((hPlatformTbsHandle == NULL) ||
+		(pbOwnerAuth == NULL))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	*pContinueAuthSession = 1;
+	if (isEncryptAuthSupported(hPlatformTbsHandle, 1)) {
+		wprintf(L"OSAP XOR supported\n");
+	}
+	else
+		wprintf(L"OSAP XOR NOT supported\n");
+
+	if (isEncryptAuthSupported(hPlatformTbsHandle, 2)) {
+		wprintf(L"OSAP AES supported\n");
+	}
+	else 
+		wprintf(L"OSAP AES NOT supported\n");
+
+
+	// Start OSAP session with ownerAuth EventType. 0x0002 means XOR encryption and ownerAuth
+	if (FAILED(hr = StartOSAPSession(hPlatformTbsHandle, 0x0002, 0, &authHandle, pNonceEven, pNonceOdd, pNonceEvenOSAP, pNonceOddOSAP)))
+	{
+		goto Cleanup;
+	}
+	// Generate the OSAP shared secret = HMAC(key.usageAuth, nonceEvenOSAP, nonceOddOSAP)
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		pbOwnerAuth,
+		cbOwnerAuth,
+		osapNonces,
+		sizeof(osapNonces),
+		osapSecret,
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbSecret)))
+	{
+		goto Cleanup;
+	}
+
+	//command buffer
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c2))) //#1 tag TPM_TAG_RQU_AUTH1_COMMAND
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x0000004b))) //#2 paramSize (0x4B if TPM_NV_DATA_PUBLIC is 0)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x000000cc))) //#3 TPM_ORD_NV_DefineSpace
+	{
+		goto Cleanup;
+	}
+	CreateNvPublic(index, indexSize, permissions, pbNvDataPublic, cbNvDataPublic, &dataPubSize);
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbNvDataPublic, (UINT32)dataPubSize))) //#4 NV_DATA_PUBLIC
+	{
+		goto Cleanup;
+	}
+
+	//generate encAuth. osapSecret points to &encAuthBuffer[0]
+	memcpy_s(&encAuthBuffer[SHA1_DIGEST_SIZE], SHA1_DIGEST_SIZE, pNonceEven, SHA1_DIGEST_SIZE);
+	//SHA1(sharedsecret, authLastNonceEven)
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		encAuthBuffer,
+		2 * SHA1_DIGEST_SIZE,
+		&encAuth[0],
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbEncAuth)))
+	{
+		goto Cleanup;
+	}
+	//XOR encryption
+	for (UINT32 i = 0; i < SHA1_DIGEST_SIZE; i++) {
+		encAuth[i] = pbIndexAuth[i] ^ encAuth[i];
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, &encAuth[0], (UINT32)SHA1_DIGEST_SIZE))) //#5 encAuth (TPM_ENCAUTH)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)authHandle))) //#6 authHandle for ownerAuth
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pNonceOdd, SHA1_DIGEST_SIZE))) //#7 nonceOdd
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, *pContinueAuthSession))) //#8 continueAuthSession
+	{
+		goto Cleanup;
+	}
+
+	// Calculate parameter digest
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT32)0x000000cc))) //1S TPM_ORD_NV_DefineSpace
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, pbNvDataPublic, (UINT32)dataPubSize))) //2S pubInfo NV_DATA_PUBLIC
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, &encAuth[0], (UINT32)SHA1_DIGEST_SIZE))) //3S encAuth (TPM_ENCAUTH)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		paramHash,
+		cursorParamHash,
+		pParamDigest,
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbRequired)))
+	{
+		goto Cleanup;
+	}
+
+	// Calculate command authorization
+	if (sizeof(cmd) < cursorCmd + SHA1_DIGEST_SIZE)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,	//#9 OwnerAuth
+		osapSecret,
+		SHA1_DIGEST_SIZE,
+		authBuffer,
+		sizeof(authBuffer),
+		&cmd[cursorCmd],
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbRequired)))
+	{
+		goto Cleanup;
+	}
+	cursorCmd += SHA1_DIGEST_SIZE;
+	// Set the command size
+	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+
+	// Send the command to the TPM
+	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
+		TBS_COMMAND_LOCALITY_ZERO,
+		TBS_COMMAND_PRIORITY_NORMAL,
+		cmd,
+		cursorCmd,
+		rsp,
+		&cbRsp)))
+	{
+		wprintf(L" error hr: %x\n", hr);
+		goto Cleanup;
+	}
+
+	// Parse the response
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnTag))) // skip tag
 	{
 		goto Cleanup;
 	}
@@ -3729,21 +3944,410 @@ _Out_ PUINT32 pcbResult
 	if (returnCode != 0)
 	{
 		hr = E_FAIL;
-		goto Cleanup;
-	}
-	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, SHA1_DIGEST_SIZE))) // nonceEven
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, 1))) // continueAuthSession
-	{
-		goto Cleanup;
-	}
-	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, SHA1_DIGEST_SIZE))) // ownerAuth
-	{
+		wprintf(L"TPM return code: %x\n", returnCode);
 		goto Cleanup;
 	}
 
 Cleanup:
 	return hr;
+
+}
+
+HRESULT
+CreateNvPublic(
+	UINT32 nvIndex,
+	UINT32 nvSize,
+	UINT32 attributes,
+	_Out_writes_to_opt_(cbOutput, *pSize) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pSize
+)
+{
+
+	#define TPM_LOC_FOUR                   (((UINT32)1)<<4)
+	#define TPM_LOC_THREE                  (((UINT32)1)<<3)
+	#define TPM_LOC_TWO                    (((UINT32)1)<<2)
+	#define TPM_LOC_ONE                    (((UINT32)1)<<1)
+	#define TPM_LOC_ZERO                   (((UINT32)1))
+
+	HRESULT hr = S_OK;
+	BYTE pbuffer[0x200] = { 0 };
+	UINT32 cursor = 0;
+	UINT32 pcrInfoCur = 0;
+	UINT32 attrCur = 0;
+	BYTE val = 0;
+	BYTE locality = TPM_LOC_ZERO | TPM_LOC_ONE | TPM_LOC_TWO | TPM_LOC_THREE | TPM_LOC_FOUR;
+
+	//PCR_INFO_SHORT
+	BYTE pcrInfoShort[26] = { 0 };
+	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, (UINT16)0x0003); //TPM_PCR_SELECTION - 2 bytes
+	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, val); // 1 byte
+	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, val); // 1 byte
+	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, val); // 1 byte
+	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, locality); //TPM_LOCALITY_SELECTION
+	PBYTE digestAtRelease = &pcrInfoShort[6];
+	UINT32 digestResult = 0;
+
+	//TPM_COMPOSITE_HASH set to 0 with 20 BYTES
+	BYTE pcrCompsite[] = {
+		0x00, 0x03, 0x00, 0x00, 0x00,	//TPM_PCR_SELECTION
+		0x00, 0x00, 0x00, 0x00	//valueSize
+	};
+
+	/* Calculate digestAtRelease
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		&pcrCompsite[0],
+		9,
+		digestAtRelease,
+		20,
+		&digestResult)))
+	{
+		goto Cleanup;
+	}
+	*/
+
+	//TPM_NV_ATTRIBUTES
+	BYTE pTpmNvAttributes[6] = { 0 };
+	WriteBigEndian(pTpmNvAttributes, 6, &attrCur, (UINT16)0x0017); //TPM_TAG_NV_ATTRIBUTES
+	WriteBigEndian(pTpmNvAttributes, 6, &attrCur, (UINT32)attributes); //attributes
+
+	//command buffer
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, (UINT16)0x0018))) //tag TPM_TAG_NV_DATA_PUBLIC
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, (UINT32)nvIndex))) //nvIndex
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, pcrInfoShort, (UINT32)sizeof(pcrInfoShort)))) //pcrInfoRead (TPM_PCR_INFO_SHORT)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, pcrInfoShort, (UINT32)sizeof(pcrInfoShort)))) //pcrInfoWrite (TPM_PCR_INFO_SHORT)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, pTpmNvAttributes, (UINT32)sizeof(pTpmNvAttributes)))) //permission
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, val))) //bReadSTClear
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, val))) //bWriteSTClear
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, val))) //bWriteDefine
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(pbuffer, sizeof(pbuffer), &cursor, (UINT32)nvSize))) //dataSize
+	{
+		goto Cleanup;
+	}
+
+	if (cursor > cbOutput) {
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	if (memcpy_s(pbOutput, cbOutput, pbuffer, cursor))
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	*pSize = cursor;
+
+Cleanup:
+	return hr;
+}
+
+/*check if tpm support different OSAP enc algorithms
+ * encType = 1 indicates XOR
+ * encType = 2 indicate AES
+ */
+BOOLEAN isEncryptAuthSupported(TBS_HCONTEXT hPlatformTbsHandle, UINT32 encType)
+{
+	// 0x00000017 TPM_CAP_AUTH_ENCRYPT
+	//0x0000000A TPM_ALG_XOR, 0x00000006 TPM_ALG_AES128
+	HRESULT hr = S_OK;
+	BYTE pSubCapXOR[4] = { 00, 00, 00, 0x0A };
+	BYTE pSubCapAES[4] = { 00, 00, 00, 0x06 };
+	UINT32 cbSubcap = 4;
+	BOOLEAN isSupported = false;
+	BYTE pbOutput[20] = { 0 };
+	UINT32 cbOutput = 20;
+	UINT32 cbResult = 0;
+
+	if (encType == 1) {
+		if (FAILED(hr = GetCapability12(hPlatformTbsHandle, 0x00000017, pSubCapXOR, 4, pbOutput, cbOutput, &cbResult)))
+		{
+			goto Cleanup;
+		}
+	}
+	else if (encType == 2) {
+		if (FAILED(hr = GetCapability12(hPlatformTbsHandle, 0x00000017, pSubCapAES, 4, pbOutput, cbOutput, &cbResult)))
+		{
+			goto Cleanup;
+		}
+	}
+	else {
+		isSupported = false;
+		goto Cleanup;
+	}
+
+	if (pbOutput[0] == 1)
+		isSupported = true;
+Cleanup:
+	return isSupported;
+}
+
+HRESULT
+changeAuthOwner12(
+	_In_ TBS_HCONTEXT hPlatformTbsHandle,
+	_In_reads_(cbOwnerAuth) PBYTE pbOwnerAuth,
+	UINT32 cbOwnerAuth)
+{
+	HRESULT hr = S_OK;
+	UINT32 cbRequired = 0;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	BYTE paramHash[0x200] = { 0 };
+	UINT32 cbRsp = sizeof(rsp);
+	UINT32 cursorCmd = 0;
+	UINT32 cursorRsp = 0;
+	UINT32 cursorParamHash = 0;
+	UINT32 authHandle = 0;
+
+	//digestParameters
+	BYTE authBuffer[3 * SHA1_DIGEST_SIZE + sizeof(BYTE)] = { 0 };
+	PBYTE pParamDigest = &authBuffer[0];
+	PBYTE pNonceEven = &authBuffer[SHA1_DIGEST_SIZE];
+	PBYTE pNonceOdd = &authBuffer[2 * SHA1_DIGEST_SIZE];
+	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
+
+	//OSAP nonces for shared secret
+	BYTE osapNonces[2 * SHA1_DIGEST_SIZE] = { 0 };
+	PBYTE pNonceEvenOSAP = &osapNonces[0];
+	PBYTE pNonceOddOSAP = &osapNonces[SHA1_DIGEST_SIZE];
+
+	//osap secret and XOR buffer
+	BYTE encAuthBuffer[2 * SHA1_DIGEST_SIZE] = { 0 };
+	PBYTE osapSecret = &encAuthBuffer[0];
+	BYTE encAuth[SHA1_DIGEST_SIZE] = { 0 };
+	UINT32 cbEncAuth = 0;
+
+	UINT32 paramSize = 0;
+	UINT32 returnCode = 0;
+	UINT16 returnTag = 0;
+	PBYTE pbPcrData = NULL;
+	UINT32 cbPcrData = 26;
+	PBYTE pbVersionInfo = NULL;
+	UINT32 cbVersionInfo = 0;
+	PBYTE pbSignature = NULL;
+	UINT32 cbSignature = 0;
+	PBYTE pResponseAuth = NULL;
+	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
+
+	BYTE  pbAuthDigest[SHA1_DIGEST_SIZE] = { 0 };
+	UINT32 cbAuthDigest;
+	BYTE pbNvDataPublic[0x200] = { 0 };
+	UINT32 cbNvDataPublic = 0x200;
+	UINT32 dataPubSize = 0;
+	UINT32 cbSecret = 0;
+
+	// Check the parameters
+	if ((hPlatformTbsHandle == NULL) ||
+		(pbOwnerAuth == NULL))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	*pContinueAuthSession = 0;
+	if (isEncryptAuthSupported(hPlatformTbsHandle, 1)) {
+		wprintf(L"OSAP XOR supported\n");
+	}
+	else
+		wprintf(L"OSAP XOR NOT supported\n");
+
+	if (isEncryptAuthSupported(hPlatformTbsHandle, 2)) {
+		wprintf(L"OSAP AES supported\n");
+	}
+	else
+		wprintf(L"OSAP AES NOT supported\n");
+
+
+	// Start OSAP session with ownerAuth EventType. 0x0002 means XOR encryption and ownerAuth
+	if (FAILED(hr = StartOSAPSession(hPlatformTbsHandle, 0x0002, 0x40000001, &authHandle, pNonceEven, pNonceOdd, pNonceEvenOSAP, pNonceOddOSAP)))
+	{
+		goto Cleanup;
+	}
+	// Generate the OSAP shared secret = HMAC(key.usageAuth, nonceEvenOSAP, nonceOddOSAP)
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		pbOwnerAuth,
+		cbOwnerAuth,
+		osapNonces,
+		SHA1_DIGEST_SIZE*2,
+		osapSecret,
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbSecret)))
+	{
+		goto Cleanup;
+	}
+
+	//command buffer
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c2))) //#1 tag TPM_TAG_RQU_AUTH1_COMMAND
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)79))) //#2 paramSize (0x4B if TPM_NV_DATA_PUBLIC is 0)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x00000010))) //#3 TPM_ORD_ChangeAuthOwner
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x0004))) //#3 TPM_PID_ADCP
+	{
+		goto Cleanup;
+	}
+
+	//generate encAuth. osapSecret points to &encAuthBuffer[0]
+	memcpy_s(&encAuthBuffer[SHA1_DIGEST_SIZE], SHA1_DIGEST_SIZE, pNonceEven, SHA1_DIGEST_SIZE);
+	//SHA1(sharedsecret, authLastNonceEven)
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		encAuthBuffer,
+		2 * SHA1_DIGEST_SIZE,
+		&encAuth[0],
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbEncAuth)))
+	{
+		goto Cleanup;
+	}
+	//XOR encryption
+	for (UINT32 i = 0; i < SHA1_DIGEST_SIZE; i++) {
+		encAuth[i] = *(pbOwnerAuth+i) ^ encAuth[i];
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, &encAuth[0], (UINT32)SHA1_DIGEST_SIZE))) //#5 encAuth (TPM_ENCAUTH)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x02))) //#6 TPM_ENTITY_TYPE
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)authHandle))) //#7 authHandle for ownerAuth
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pNonceOdd, SHA1_DIGEST_SIZE))) //#8 nonceOdd
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, *pContinueAuthSession))) //#9 continueAuthSession
+	{
+		goto Cleanup;
+	}
+
+	// Calculate parameter digest
+
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT32)0x00000010))) //#1S TPM_ORD_ChangeAuthOwner
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT16)0x0004))) //#2S TPM_PID_ADCP
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, &encAuth[0], (UINT32)SHA1_DIGEST_SIZE))) //3S encAuth (TPM_ENCAUTH)
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT16)0x02))) //#6 TPM_ENTITY_TYPE
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		paramHash,
+		cursorParamHash,
+		pParamDigest,
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbRequired)))
+	{
+		goto Cleanup;
+	}
+
+	// Calculate command authorization
+	if (sizeof(cmd) < cursorCmd + SHA1_DIGEST_SIZE)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,	//#9 OwnerAuth
+		osapSecret,	// not sure if ownerauth is used or osap shared secrect pbOwnerAuth, cbOwnerAuth,
+		SHA1_DIGEST_SIZE,
+		authBuffer,
+		sizeof(authBuffer),
+		&cmd[cursorCmd],
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbRequired)))
+	{
+		goto Cleanup;
+	}
+	cursorCmd += SHA1_DIGEST_SIZE;
+	// Set the command size
+	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+
+	// Send the command to the TPM
+	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
+		TBS_COMMAND_LOCALITY_ZERO,
+		TBS_COMMAND_PRIORITY_NORMAL,
+		cmd,
+		cursorCmd,
+		rsp,
+		&cbRsp)))
+	{
+		wprintf(L" error hr: %x\n", hr);
+		goto Cleanup;
+	}
+
+	// Parse the response
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnTag))) // skip tag
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &paramSize))) // paramSize
+	{
+		goto Cleanup;
+	}
+	if (paramSize != cbRsp)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnCode))) // ReturnCode
+	{
+		goto Cleanup;
+	}
+	if (returnCode != 0)
+	{
+		hr = E_FAIL;
+		wprintf(L"TPM return code: %x\n", returnCode);
+		goto Cleanup;
+	}
+
+Cleanup:
+	return hr;
+
 }

@@ -3373,14 +3373,90 @@ DllExport HRESULT TpmNVInfo(
 			ReadBigEndian(pbOutput, *pcbResult, &cursor, &nvi);
 			if (nvIndex == nvi || list_only==1) {
 				indexFound = 1;
-				wprintf(L"NVRAM index found	: 0x%08x (%d)\n", nvi, nvi);
+				wprintf(L"NVRAM index defined	: 0x%08x (%d)\n", nvi, nvi);
 			}
 		}
 		if (nvIndex>0 && indexFound == 0) {
-			wprintf(L"index 0x%08x not found\n", nvIndex);
+			wprintf(L"index 0x%08x not defined\n", nvIndex);
 		}
 		// 0x00000011 TPM_CAP_NV_INDEX - to get the TPM_NV_DATA_PUBLIC info of the index
 
+	}
+	else if (tpmVersion == TPM_VERSION_20)
+	{
+		//Not implemented yet
+	}
+	else
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+
+Cleanup:
+	// Close the TBS handle if we opened it in here
+	if (hPlatformTbsHandle != NULL)
+	{
+		Tbsip_Context_Close(hPlatformTbsHandle);
+		hPlatformTbsHandle = NULL;
+	}
+	return hr;
+}
+
+DllExport HRESULT TpmNVDefineSpace(
+	UINT32 nvIndex,
+	UINT32 indexSize,
+	PBYTE nvAuth, 
+	PCWSTR permissions
+	) 
+{
+	HRESULT hr = 0;
+	TBS_CONTEXT_PARAMS2 contextParams;
+	TBS_HCONTEXT hPlatformTbsHandle = 0;
+	UINT32 tpmVersion;
+	BYTE pbOwnerAuth[256] = { 0 };
+	UINT32 cbOwnerAuth = 256;
+
+	// Get TPM version to select implementation
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		goto Cleanup;
+	}
+	//get the tbs handle
+	contextParams.version = TBS_CONTEXT_VERSION_TWO;
+	contextParams.asUINT32 = 0;
+	contextParams.includeTpm12 = 1;
+	contextParams.includeTpm20 = 1;
+	if (FAILED(hr = Tbsi_Context_Create((PCTBS_CONTEXT_PARAMS)&contextParams, &hPlatformTbsHandle)))
+	{
+		goto Cleanup;
+	}
+	// get ownerAuth
+	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_FULL, pbOwnerAuth, &cbOwnerAuth))) {
+		goto Cleanup;
+	}
+	/* Debug
+	wprintf(L" ownerauth read by calling Tbsi_Get_OwnerAuth: ", cbOwnerAuth);
+	for (UINT32 i = 0; i < cbOwnerAuth; i++) {
+		wprintf(L"%02x", pbOwnerAuth[i]);
+	}
+	wprintf(L"\n");
+	*/
+	//dispatch based on TPM version
+	
+	#define TPM_NV_PER_READ_STCLEAR                 (((UINT32)1)<<31)
+	#define TPM_NV_PER_AUTHREAD						(((UINT32)1)<<18)
+	#define TPM_NV_PER_OWNERREAD                    (((UINT32)1)<<17)
+	#define TPM_NV_PER_WRITEALL						(((UINT32)1)<<12)
+	#define TPM_NV_PER_AUTHWRITE					(((UINT32)1)<<2)
+	#define	TPM_NV_PER_OWNERWRITE					(((UINT32)1)<<1)
+
+	if (tpmVersion == TPM_VERSION_12)
+	{
+		if (FAILED(hr = NvDefineSpace12(hPlatformTbsHandle, nvIndex, indexSize, pbOwnerAuth, cbOwnerAuth, nvAuth, 20, TPM_NV_PER_AUTHWRITE)))
+		{
+			goto Cleanup;
+		}
+		wprintf(L"TPM nvdefine returned successfully!\n");
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{

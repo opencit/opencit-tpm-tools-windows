@@ -8525,7 +8525,70 @@ HRESULT PcpToolNVDefine(
 	_In_reads_(argc) WCHAR* argv[]
 	)
 {
-	return 0;
+	HRESULT hr = 0;
+	UINT32 nvIndex = 0;
+	UINT32 nvIndexSize = 0;
+	PCWSTR nvPassword = NULL;
+	PCWSTR permissions = NULL;
+	BYTE nvAuthDigest[20] = { 0 };
+	UINT32 result = 0;
+
+	if (argc < 6) {
+		wprintf(L"Usage: Pcptool nvdefine [index] [size] [nvramPassword] [permissions]\n");
+		goto Cleanup;
+	}
+	if (swscanf_s(argv[2], L"%x", &nvIndex) == 0) 	//Parameter: nv_index
+	{
+		goto Cleanup;
+	}
+	if (swscanf_s(argv[3], L"%x", &nvIndexSize) == 0) //Parameter: Index Size
+	{
+		goto Cleanup;
+	}
+	nvPassword = argv[4];
+	permissions = argv[5];
+
+	//wprintf(L"nvpasswd: %s, permission: %s\n", nvPassword, permissions);
+
+	if (FAILED(hr = TpmAttiShaHash(
+		BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		(PBYTE)nvPassword,
+		(UINT32)(wcslen(nvPassword) * sizeof(WCHAR)),
+		nvAuthDigest,
+		sizeof(nvAuthDigest),
+		&result)))
+	{
+		goto Cleanup;
+	}
+
+	/* below is for testing. Windows takes the password in WSTR and SHA1 hash it as owner password
+	PWSTR pOAuth = L"12345678";
+	BYTE OAuthDigest[20] = { 0 };
+
+	if (FAILED(hr = TpmAttiShaHash(
+		BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		(PBYTE)pOAuth,
+		(UINT32)(wcslen(pOAuth) * sizeof(WCHAR)),
+		OAuthDigest,
+		20,
+		&result)))
+	{
+		goto Cleanup;
+	}
+	wprintf(L" oAuth as the SHA1 hash: ");
+	for (UINT32 i = 0; i < 20; i++) {
+		wprintf(L"%02x", OAuthDigest[i]);
+	}
+	wprintf(L"\n");
+	*/
+
+	hr = TpmNVDefineSpace(nvIndex, nvIndexSize, (PBYTE)&nvAuthDigest[0], permissions);
+Cleanup:
+	return hr;
 }
 
 HRESULT PcpToolNVRelease(
