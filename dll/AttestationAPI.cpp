@@ -3456,7 +3456,7 @@ DllExport HRESULT TpmNVDefineSpace(
 		{
 			goto Cleanup;
 		}
-		wprintf(L"TPM nvdefine returned successfully!\n");
+		//wprintf(L"TPM nvdefine returned successfully!\n");
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{

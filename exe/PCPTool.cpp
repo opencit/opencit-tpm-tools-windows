@@ -101,7 +101,7 @@ PcpToolGetHelp(
 	wprintf(L" NVRead [key file] [key name] {cert file}\n");
 	wprintf(L" NVWrite\n");
 	wprintf(L" NVDefine [index] [size] [nvramPassword] [permissions]\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
-	wprintf(L" NVRelease\n");
+	wprintf(L" NVRelease [index]\n");
 }
 
 int __cdecl wmain(_In_ int argc,

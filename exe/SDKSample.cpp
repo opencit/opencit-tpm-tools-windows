@@ -8587,6 +8587,12 @@ HRESULT PcpToolNVDefine(
 	*/
 
 	hr = TpmNVDefineSpace(nvIndex, nvIndexSize, (PBYTE)&nvAuthDigest[0], permissions);
+	if (hr != S_OK) {
+		wprintf(L"tpm nv_define failed with return code %d\n", hr);
+	}
+	else {
+		wprintf(L"tpm nv_define succeeds!\n");
+	}
 Cleanup:
 	return hr;
 }
@@ -8596,5 +8602,47 @@ HRESULT PcpToolNVRelease(
 	_In_reads_(argc) WCHAR* argv[]
 	)
 {
-	return 0;
+	HRESULT hr = 0;
+	UINT32 nvIndex = 0;
+	UINT32 nvIndexSize = 0;
+	PCWSTR nvPassword = NULL;
+	PCWSTR permissions = NULL;
+	BYTE nvAuthDigest[20] = { 0 };
+	UINT32 result = 0;
+
+	if (argc < 3) {
+		wprintf(L"Usage: Pcptool nvdefine [index]\n");
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	if (swscanf_s(argv[2], L"%x", &nvIndex) == 0) 	//Parameter: nv_index
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	nvPassword = L"any"; // the NVIndex password here is not required
+
+	if (FAILED(hr = TpmAttiShaHash(
+		BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		(PBYTE)nvPassword,
+		(UINT32)(wcslen(nvPassword) * sizeof(WCHAR)),
+		nvAuthDigest,
+		sizeof(nvAuthDigest),
+		&result)))
+	{
+		goto Cleanup;
+	}
+
+	/* call the same function TPMNVDefineSpace but with size 0 to release the NVindex */
+	hr = TpmNVDefineSpace(nvIndex, 0, (PBYTE)&nvAuthDigest[0], permissions);
+	if (hr != S_OK) {
+		wprintf(L"tpm nvrelease failed with return code %d\n", hr);
+	}
+	else {
+		wprintf(L"tpm nvrelease succeeds!\n");
+	}
+Cleanup:
+	return hr;
 }

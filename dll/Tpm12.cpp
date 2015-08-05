@@ -3768,6 +3768,8 @@ UINT32 permissions
 	UINT32 cbNvDataPublic = 0x200;
 	UINT32 dataPubSize = 0;
 	UINT32 cbSecret = 0;
+	BOOLEAN isXOR = false;
+	BOOLEAN isAES = false;
 
 	// Check the parameters
 	if ((hPlatformTbsHandle == NULL) ||
@@ -3778,18 +3780,8 @@ UINT32 permissions
 	}
 
 	*pContinueAuthSession = 1;
-	if (isEncryptAuthSupported(hPlatformTbsHandle, 1)) {
-		wprintf(L"OSAP XOR supported\n");
-	}
-	else
-		wprintf(L"OSAP XOR NOT supported\n");
-
-	if (isEncryptAuthSupported(hPlatformTbsHandle, 2)) {
-		wprintf(L"OSAP AES supported\n");
-	}
-	else 
-		wprintf(L"OSAP AES NOT supported\n");
-
+	isXOR = isEncryptAuthSupported(hPlatformTbsHandle, 1);
+	isAES = isEncryptAuthSupported(hPlatformTbsHandle, 2);
 
 	// Start OSAP session with ownerAuth EventType. 0x0002 means XOR encryption and ownerAuth
 	if (FAILED(hr = StartOSAPSession(hPlatformTbsHandle, 0x0002, 0, &authHandle, pNonceEven, pNonceOdd, pNonceEvenOSAP, pNonceOddOSAP)))
@@ -4160,6 +4152,9 @@ changeAuthOwner12(
 	UINT32 dataPubSize = 0;
 	UINT32 cbSecret = 0;
 
+	BOOLEAN isXOR = false;
+	BOOLEAN isAES = false;
+
 	// Check the parameters
 	if ((hPlatformTbsHandle == NULL) ||
 		(pbOwnerAuth == NULL))
@@ -4169,17 +4164,8 @@ changeAuthOwner12(
 	}
 
 	*pContinueAuthSession = 0;
-	if (isEncryptAuthSupported(hPlatformTbsHandle, 1)) {
-		wprintf(L"OSAP XOR supported\n");
-	}
-	else
-		wprintf(L"OSAP XOR NOT supported\n");
-
-	if (isEncryptAuthSupported(hPlatformTbsHandle, 2)) {
-		wprintf(L"OSAP AES supported\n");
-	}
-	else
-		wprintf(L"OSAP AES NOT supported\n");
+	isXOR = isEncryptAuthSupported(hPlatformTbsHandle, 1);
+	isAES = isEncryptAuthSupported(hPlatformTbsHandle, 2);
 
 
 	// Start OSAP session with ownerAuth EventType. 0x0002 means XOR encryption and ownerAuth
