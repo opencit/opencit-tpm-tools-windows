@@ -8517,7 +8517,59 @@ HRESULT PcpToolNVWrite(
 	_In_reads_(argc) WCHAR* argv[]
 	)
 {
-	return 0;
+	HRESULT hr = 0;
+	UINT32 nvIndex = 0;
+	UINT32 nvIndexSize = 0;
+	PCWSTR nvPassword = NULL;
+	PCWSTR permissions = NULL;
+	PCWSTR nvData = NULL;
+	BYTE nvAuthDigest[20] = { 0 };
+	UINT32 result = 0;
+	BYTE pbData[4096] = { 0 };
+	UINT32 cbData = 0;
+
+	if (argc < 5) {
+		wprintf(L"Usage: Pcptool nvwrite [nvIndex] [nvramPassword] [data in hex]\n");
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	if (swscanf_s(argv[2], L"%x", &nvIndex) == 0) 	//Parameter: nv_index
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	nvPassword = argv[3]; // the NVIndex password
+	nvData = argv[4];
+
+	cbData = hexStringToByteArray(nvData, pbData);
+	if (cbData ==0 ) {
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	if (FAILED(hr = TpmAttiShaHash(
+		BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		(PBYTE)nvPassword,
+		(UINT32)(wcslen(nvPassword) * sizeof(WCHAR)),
+		nvAuthDigest,
+		sizeof(nvAuthDigest),
+		&result)))
+	{
+		goto Cleanup;
+	}
+
+	/* call the same function TPMNVWrite */
+	hr = TpmNVWriteValueAuth(nvIndex, (PBYTE)&nvAuthDigest[0], 20, pbData, cbData);
+	if (hr != S_OK) {
+		wprintf(L"tpm nv writevalueauth failed with return value %d\n", hr);
+	}
+	else {
+		wprintf(L"tpm nv writevalueauth succeeds!\n");
+	}
+Cleanup:
+	return hr;
 }
 
 HRESULT PcpToolNVDefine(

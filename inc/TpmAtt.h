@@ -588,6 +588,14 @@ DllExport HRESULT TpmNVDefineSpace(
 	PCWSTR permissions
 	);
 
+DllExport HRESULT TpmNVWriteValueAuth(
+	UINT32 nvIndex,
+	PBYTE nvAuth,
+	UINT32 cbNvAuth,
+	PBYTE pbData,
+	UINT32 cbData
+	);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -4337,3 +4337,194 @@ Cleanup:
 	return hr;
 
 }
+
+HRESULT
+nvWriteVauleAuth12(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 index,
+	_In_reads_(cbIndexAuth) PBYTE pbIndexAuth,
+	UINT32 cbIndexAuth,
+	_In_reads_(cbData) PBYTE pbData,
+	UINT32 cbData
+)
+{
+	HRESULT hr = S_OK;
+	UINT32 cbRequired = 0;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	BYTE paramHash[0x200] = { 0 };
+	UINT32 cbRsp = sizeof(rsp);
+	UINT32 cursorCmd = 0;
+	UINT32 cursorParamHash = 0;
+	UINT32 cursorRsp = 0;
+	UINT32 authHandle = 0;
+	BYTE authBuffer[3 * SHA1_DIGEST_SIZE + sizeof(BYTE)] = { 0 };
+	PBYTE pParamDigest = &authBuffer[0];
+	PBYTE pNonceEven = &authBuffer[SHA1_DIGEST_SIZE];
+	PBYTE pNonceOdd = &authBuffer[2 * SHA1_DIGEST_SIZE];
+	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
+	UINT32 paramSize = 0;
+	UINT32 returnCode = 0;
+	PBYTE pbPcrData = NULL;
+	UINT32 cbPcrData = 26;
+	PBYTE pbVersionInfo = NULL;
+	UINT32 cbVersionInfo = 0;
+	PBYTE pbSignature = NULL;
+	UINT32 cbSignature = 0;
+	PBYTE pResponseAuth = NULL;
+	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
+
+	// Check the parameters
+	if ((hPlatformTbsHandle == NULL) ||
+		(pbIndexAuth == NULL) ||
+		(pbData == NULL))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+
+	// Start OIAP session
+	if (FAILED(hr = StartOIAPSession(hPlatformTbsHandle, &authHandle, pNonceEven, pNonceOdd)))
+	{
+		goto Cleanup;
+	}
+
+	// Build TPM_NV_WRITEVALUEAUTH command buffer
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c2))) //TPM_TAG_RQU_AUTH1_COMMAND
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x00000057))) //paramSize
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x000000ce))) //TPM_ORD_NV_WriteValueAuth
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)index))) //TPM_NV_INDEX
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0))) //offset = 0;
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)cbData))) //datasize
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbData, cbData))) //data
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, authHandle))) //authHandle
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pNonceOdd, SHA1_DIGEST_SIZE))) //nonceOdd
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, *pContinueAuthSession))) //continueAuthSession
+	{
+		goto Cleanup;
+	}
+
+	// Calculate parameter digest
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT32)0x000000ce))) //TPM_ORD_NV_WriteValueAuth
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT32)index))) //TPM_NV_INDEX
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT32)0))) //offset = 0;
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, (UINT32)cbData))) //datasize
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(paramHash, sizeof(paramHash), &cursorParamHash, pbData, cbData))) //data
+	{
+		goto Cleanup;
+	}
+
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		NULL,
+		0,
+		paramHash,
+		cursorParamHash,
+		pParamDigest,
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbRequired)))
+	{
+		goto Cleanup;
+	}
+
+	// Calculate command authorization
+	if (sizeof(cmd) < cursorCmd + SHA1_DIGEST_SIZE)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+		pbIndexAuth,
+		cbIndexAuth,
+		authBuffer,
+		sizeof(authBuffer),
+		&cmd[cursorCmd],
+		SHA1_DIGEST_SIZE,
+		(PUINT32)&cbRequired)))
+	{
+		goto Cleanup;
+	}
+	cursorCmd += SHA1_DIGEST_SIZE;
+
+	// Set the command size
+	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+
+	// Send the command to the TPM
+	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
+		TBS_COMMAND_LOCALITY_ZERO,
+		TBS_COMMAND_PRIORITY_NORMAL,
+		cmd,
+		cursorCmd,
+		rsp,
+		&cbRsp)))
+	{
+		goto Cleanup;
+	}
+
+	// Parse the response
+	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, sizeof(UINT16)))) // skip tag
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &paramSize))) // paramSize
+	{
+		goto Cleanup;
+	}
+	if (paramSize != cbRsp)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnCode))) // ReturnCode
+	{
+		goto Cleanup;
+	}
+	if (returnCode != 0)
+	{
+		wprintf(L"TPM command failed with return code: %08x\n", returnCode);
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+
+Cleanup:
+	return hr;
+}

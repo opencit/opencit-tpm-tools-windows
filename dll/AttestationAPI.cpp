@@ -3477,3 +3477,59 @@ Cleanup:
 	}
 	return hr;
 }
+
+DllExport HRESULT TpmNVWriteValueAuth(
+	UINT32 nvIndex,
+	PBYTE nvAuth,
+	UINT32 cbNvAuth,
+	PBYTE pbData,
+	UINT32 cbData
+	)
+{
+	HRESULT hr = 0;
+	TBS_CONTEXT_PARAMS2 contextParams;
+	TBS_HCONTEXT hPlatformTbsHandle = 0;
+	UINT32 tpmVersion;
+
+	// Get TPM version to select implementation
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		goto Cleanup;
+	}
+	//get the tbs handle
+	contextParams.version = TBS_CONTEXT_VERSION_TWO;
+	contextParams.asUINT32 = 0;
+	contextParams.includeTpm12 = 1;
+	contextParams.includeTpm20 = 1;
+	if (FAILED(hr = Tbsi_Context_Create((PCTBS_CONTEXT_PARAMS)&contextParams, &hPlatformTbsHandle)))
+	{
+		goto Cleanup;
+	}
+
+	if (tpmVersion == TPM_VERSION_12)
+	{
+		if (FAILED(hr = nvWriteVauleAuth12(hPlatformTbsHandle, nvIndex, nvAuth, cbNvAuth, pbData, cbData)))
+		{
+			goto Cleanup;
+		}
+		//wprintf(L"TPM nvdefine returned successfully!\n");
+	}
+	else if (tpmVersion == TPM_VERSION_20)
+	{
+		//Not implemented yet
+	}
+	else
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+
+Cleanup:
+	// Close the TBS handle if we opened it in here
+	if (hPlatformTbsHandle != NULL)
+	{
+		Tbsip_Context_Close(hPlatformTbsHandle);
+		hPlatformTbsHandle = NULL;
+	}
+	return hr;
+}
