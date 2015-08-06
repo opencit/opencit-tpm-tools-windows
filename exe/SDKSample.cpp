@@ -8509,7 +8509,42 @@ HRESULT PcpToolNVRead(
 	_In_reads_(argc) WCHAR* argv[]
 	)
 {
-	return 0;
+	HRESULT hr = 0;
+	UINT32 nvIndex = 0;
+	UINT32 nvIndexSize = 0;
+	PCWSTR nvPassword = NULL;
+	PCWSTR permissions = NULL;
+	PCWSTR nvData = NULL;
+	UINT32 result = 0;
+	BYTE pbData[20] = { 0 };
+	UINT32 cbData = 20; // only read 20 bytes from the nvIndex area
+	UINT32 rspDLen = 0;
+
+	if (argc < 3) {
+		wprintf(L"Usage: Pcptool nvread [nvIndex]\n");
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	if (swscanf_s(argv[2], L"%x", &nvIndex) == 0) 	//Parameter: nv_index
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	/* call nvreadvalue to read 20 bytes */
+	hr = TpmNVReadValue(nvIndex, pbData, cbData, &rspDLen);
+	if (hr != S_OK) {
+		wprintf(L"tpm nv readvalue failed with return value %d\n", hr);
+	}
+	else {
+		wprintf(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
+		for (UINT32 i = 0; i < cbData; i++) {
+			wprintf(L"%02x", pbData[i]);
+		}
+		wprintf(L"\n");
+	}
+Cleanup:
+	return hr;
 }
 
 HRESULT PcpToolNVWrite(

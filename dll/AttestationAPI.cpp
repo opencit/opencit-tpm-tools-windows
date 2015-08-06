@@ -3478,6 +3478,67 @@ Cleanup:
 	return hr;
 }
 
+DllExport HRESULT TpmNVReadValue(
+	UINT32 nvIndex,
+	_Out_writes_to_opt_(cbData, *pcbResult) PBYTE pbData,
+	UINT32 cbData,
+	_Out_ PUINT32 pcbResult
+	)
+{
+	HRESULT hr = 0;
+	TBS_CONTEXT_PARAMS2 contextParams;
+	TBS_HCONTEXT hPlatformTbsHandle = 0;
+	UINT32 tpmVersion;
+	BYTE pbOwnerAuth[256] = { 0 };
+	UINT32 cbOwnerAuth = 256;
+
+	// Get TPM version to select implementation
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		goto Cleanup;
+	}
+	//get the tbs handle
+	contextParams.version = TBS_CONTEXT_VERSION_TWO;
+	contextParams.asUINT32 = 0;
+	contextParams.includeTpm12 = 1;
+	contextParams.includeTpm20 = 1;
+	if (FAILED(hr = Tbsi_Context_Create((PCTBS_CONTEXT_PARAMS)&contextParams, &hPlatformTbsHandle)))
+	{
+		goto Cleanup;
+	}
+	// get ownerAuth
+	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_FULL, pbOwnerAuth, &cbOwnerAuth))) {
+		goto Cleanup;
+	}
+
+	if (tpmVersion == TPM_VERSION_12)
+	{
+		if (FAILED(hr = nvReadVaule12(hPlatformTbsHandle, nvIndex, pbOwnerAuth, cbOwnerAuth, pbData, cbData, pcbResult)))
+		{
+			goto Cleanup;
+		}
+		//wprintf(L"TPM nvdefine returned successfully!\n");
+	}
+	else if (tpmVersion == TPM_VERSION_20)
+	{
+		//Not implemented yet
+	}
+	else
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+
+Cleanup:
+	// Close the TBS handle if we opened it in here
+	if (hPlatformTbsHandle != NULL)
+	{
+		Tbsip_Context_Close(hPlatformTbsHandle);
+		hPlatformTbsHandle = NULL;
+	}
+	return hr;
+}
+
 DllExport HRESULT TpmNVWriteValueAuth(
 	UINT32 nvIndex,
 	PBYTE nvAuth,

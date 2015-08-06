@@ -227,9 +227,9 @@ StartOSAPSession(
 
 HRESULT
 changeAuthOwner12(
-_In_ TBS_HCONTEXT hPlatformTbsHandle,
-_In_reads_(cbOwnerAuth) PBYTE pbOwnerAuth,
-UINT32 cbOwnerAuth
+	_In_ TBS_HCONTEXT hPlatformTbsHandle,
+	_In_reads_(cbOwnerAuth) PBYTE pbOwnerAuth,
+	UINT32 cbOwnerAuth
 );
 
 HRESULT
@@ -240,6 +240,17 @@ nvWriteVauleAuth12(
 	UINT32 cbIndexAuth,
 	_In_reads_(cbData) PBYTE pbData,
 	UINT32 cbData
+);
+
+HRESULT
+nvReadVaule12(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 index,
+	_In_reads_(cbIndexAuth) PBYTE pbOwnerAuth,
+	UINT32 cbOwnerAuth,
+	_Out_writes_to_opt_(cbOutput, *pSize) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pSize
 );
 
 // TPM20.cpp
