@@ -48,5 +48,5 @@ Abstract:
 #include "targetver.h"
 #include "TpmAtt.h"
 #include "InlineFn.h"
-#include "pcptool.h"
+#include "tpmtool.h"
 

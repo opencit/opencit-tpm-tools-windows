@@ -8537,11 +8537,11 @@ HRESULT PcpToolNVRead(
 		wprintf(L"tpm nv readvalue failed with return value %d\n", hr);
 	}
 	else {
-		wprintf(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
+		//wprintf(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
 		for (UINT32 i = 0; i < cbData; i++) {
 			wprintf(L"%02x", pbData[i]);
 		}
-		wprintf(L"\n");
+		//wprintf(L"\n");
 	}
 Cleanup:
 	return hr;
@@ -8729,6 +8729,67 @@ HRESULT PcpToolNVRelease(
 	}
 	else {
 		wprintf(L"tpm nvrelease succeeds!\n");
+	}
+Cleanup:
+	return hr;
+}
+
+HRESULT PcpToolPCRExtend(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	)
+{
+	HRESULT hr = 0;
+	UINT32 pcrIndex = 0;
+	PCWSTR digestHex = NULL;
+	BYTE nvAuthDigest[20] = { 0 };
+	UINT32 result = 0;
+	BYTE pbDigest[20] = { 0 };
+	BYTE pbNewDigest[20] = { 0 };
+	UINT32 cbDigest = 0;
+	UINT32 val = 0;
+
+	if (argc < 4) {
+		wprintf(L"Usage: Pcptool pcrextend [pcrIndex] [digest in hex]\n");
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	if (swscanf_s(argv[2], L"%d", &pcrIndex) == 0) 	//Parameter: nv_index
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	if (pcrIndex > 23) {
+		wprintf(L"PCR index should be in the range of 0-23\n");
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+	digestHex = argv[3]; // the digest in Hex
+	//wprintf(L"digestHex size: %d\n", wcslen(digestHex));
+	if (wcslen(digestHex) != 40) {
+		wprintf(L"Invalid length of digest value in hex: %d bytes\n", val);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	cbDigest = hexStringToByteArray(digestHex, pbDigest);
+	if (cbDigest != 20) {
+		wprintf(L"PCR new digest value should be 20 bytes\n");
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	/* call the same function TPMNVWrite */
+	hr = TpmPCRExtend(pcrIndex, pbDigest, pbNewDigest);
+	if (hr != S_OK) {
+		wprintf(L"tpm pcrextend failed with return value %d\n", hr);
+	}
+	else {
+		wprintf(L"tpm pcrextend succeeds with new value: ");
+		for (UINT32 i = 0; i < 20; i++) {
+			wprintf(L"%02x", pbDigest[i]);
+		}
+		wprintf(L"\n");
 	}
 Cleanup:
 	return hr;

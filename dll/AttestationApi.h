@@ -253,6 +253,13 @@ nvReadVaule12(
 	_Out_ PUINT32 pSize
 );
 
+HRESULT
+pcrExtend12(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 pcrIndex,
+	_In_ PBYTE pbDigest,
+	_Out_ PBYTE pbNewDigest
+);
 // TPM20.cpp
 
 HRESULT

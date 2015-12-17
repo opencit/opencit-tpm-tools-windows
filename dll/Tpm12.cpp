@@ -4724,3 +4724,104 @@ nvWriteVauleAuth12(
 Cleanup:
 	return hr;
 }
+
+HRESULT
+pcrExtend12(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 pcrIndex,
+	_In_ PBYTE pbDigest,
+	_Out_ PBYTE pbNewDigest
+)
+{
+	HRESULT hr = S_OK;
+	UINT32 cbRequired = 0;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	BYTE paramHash[0x200] = { 0 };
+	UINT32 cbRsp = sizeof(rsp);
+	UINT32 cursorCmd = 0;
+	UINT32 cursorParamHash = 0;
+	UINT32 cursorRsp = 0;
+	UINT32 paramSize = 0;
+	UINT32 returnCode = 0;
+	PBYTE pbOutDigest = NULL;
+
+	// Check the parameters
+	if ((hPlatformTbsHandle == NULL) ||
+		(pbDigest == NULL) ||
+		(pbNewDigest == NULL))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Build TPM_EXTEND command buffer
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c1))) //TPM_TAG_RQU_COMMAND
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x00000022))) //paramSize
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)0x00000014))) //TPM_ORD_Extend
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT32)pcrIndex))) //TPM_PCRINDEX
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, pbDigest, 20))) //TPM_DIGEST
+	{
+		goto Cleanup;
+	}
+
+	// Set the command size
+	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
+
+	// Send the command to the TPM
+	if (FAILED(hr = Tbsip_Submit_Command(hPlatformTbsHandle,
+		TBS_COMMAND_LOCALITY_ZERO,
+		TBS_COMMAND_PRIORITY_NORMAL,
+		cmd,
+		cursorCmd,
+		rsp,
+		&cbRsp)))
+	{
+		goto Cleanup;
+	}
+
+	// Parse the response
+	if (FAILED(hr = SkipBigEndian(rsp, cbRsp, &cursorRsp, sizeof(UINT16)))) // skip tag
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &paramSize))) // paramSize
+	{
+		goto Cleanup;
+	}
+	if (paramSize != cbRsp)
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &returnCode))) // ReturnCode
+	{
+		goto Cleanup;
+	}
+	if (returnCode != 0)
+	{
+		wprintf(L"TPM command failed with return code: %08x\n", returnCode);
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursorRsp, &pbOutDigest, 20))) // data
+	{
+		goto Cleanup;
+	}
+	memcpy_s(pbNewDigest, 20, pbOutDigest, 20);
+
+Cleanup:
+	return hr;
+}

@@ -603,6 +603,12 @@ DllExport HRESULT TpmNVReadValue(
 	_Out_ PUINT32 pcbResult
 	);
 
+DllExport HRESULT TpmPCRExtend(
+	UINT32 pcrIndex,
+	PBYTE pbDigest,
+	_Out_ PBYTE pbNewDigest
+	);
+
 #if defined(__cplusplus)
 }
 #endif
