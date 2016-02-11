@@ -2115,6 +2115,9 @@ the key and Identity Binding, that is the proof of posession.
 	BYTE chosenIDHash[20] = { 0 };
 	WCHAR aikSecret[256] = { 0 };
 
+	PBYTE pbAik = NULL;
+	UINT32 cbAik = 0;
+
 	// Paranoid check
 	if (argc < 2)
 	{
@@ -2310,12 +2313,49 @@ the key and Identity Binding, that is the proof of posession.
 	}
 	wprintf(L" ");
 
-	/* output AIK Pub key blob*/
+	//export the opaque key blob - Haidong
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		NULL,
+		NULL,
+		0,
+		(PDWORD)&cbAik,
+		0))))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbAik, cbAik)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		NULL,
+		pbAik,
+		cbAik,
+		(PDWORD)&cbAik,
+		0))))
+	{
+		goto Cleanup;
+	}
+	/* output AIK opaque key blob*/
+	for (UINT32 n = 0; n < cbAik; n++)
+	{
+		wprintf(L"%02x", pbAik[n]);
+	}
+	wprintf(L"\n");
+
+	/* NOT since we ouput the AIK opaque key --output AIK Pub key blob
 	for (UINT32 n = 0; n < cbAikPub; n++)
 	{
 		wprintf(L"%02x", pbAikPub[n]);
 	}
 	wprintf(L"\n");
+	*/
 
 Cleanup:
 	if (hKey != NULL)
@@ -2328,6 +2368,7 @@ Cleanup:
 		NCryptFreeObject(hProv);
 		hProv = NULL;
 	}
+	ZeroAndFree((PVOID*)&pbAik, cbAik);
 	PcpToolCallResult(L"PcpToolCollateIdentityRequest()", hr);
 	return hr;
 }
