@@ -239,6 +239,12 @@ PcpToolCreateAIK(
     );
 
 HRESULT
+PcpToolImportAIK(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolCollateIdentityRequest(
 int argc,
 _In_reads_(argc) WCHAR* argv[]

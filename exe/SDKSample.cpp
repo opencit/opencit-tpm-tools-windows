@@ -4143,6 +4143,240 @@ Cleanup:
 }
 
 HRESULT
+PcpToolImportAIK(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+/*++ Haidong.xia@intel.com
+This function will import an AIK key on the KSP. Change from the immportKey function is the
+ 1. key type: BCRYPT_OPAQUE_KEY_BLOB
+ 2. the input parameter is in hex. 
+Optionally it may be imported with a
+usageAuth value and a migrationAuth
+--*/
+{
+	HRESULT hr = S_OK;
+	NCRYPT_PROV_HANDLE hProv = NULL;
+	NCRYPT_KEY_HANDLE hKey = NULL;
+	PCWSTR keyFile = NULL;
+	PCWSTR keyName = NULL;
+	PCWSTR usageAuth = NULL;
+	PCWSTR migrationAuth = NULL;
+	PBYTE pbKey = NULL;
+	UINT32 cbKey = 0;
+	DWORD importFlags = NCRYPT_OVERWRITE_KEY_FLAG;
+	NCryptBuffer keyImportParameters[] =
+	{ { 0,
+	NCRYPTBUFFER_PKCS_KEY_NAME,
+	NULL },
+	{ sizeof(BCRYPT_RSA_ALGORITHM),
+	NCRYPTBUFFER_PKCS_ALG_ID,
+	(PVOID)BCRYPT_RSA_ALGORITHM } };
+	NCryptBufferDesc parameterList = { NCRYPTBUFFER_VERSION,
+		2,
+		keyImportParameters };
+	BYTE pbPubKey[1024] = { 0 };
+	DWORD cbPubKey = 0;
+	BOOLEAN tUIRequested = false;
+	LPCWSTR optionalPIN = L"This key requires usage consent and an optional PIN.";
+	LPCWSTR mandatoryPIN = L"This key has a mandatory PIN.";
+	NCRYPT_UI_POLICY rgbUiPolicy = { 1, 0, L"PCPTool", NULL, NULL };
+
+	// Paranoid check
+	if (argc < 2)
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Key File
+	if (argc > 2)
+	{
+		keyFile = argv[2];
+
+		if (FAILED(hr = PcpToolReadFile(keyFile, NULL, 0, &cbKey)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = AllocateAndZero((PVOID*)&pbKey, cbKey)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = PcpToolReadFile(
+			keyFile,
+			pbKey,
+			cbKey,
+			&cbKey)))
+		{
+			goto Cleanup;
+		}
+	}
+	else
+	{
+		wprintf(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Key Name
+	if (argc > 3)
+	{
+		keyName = argv[3];
+	}
+	else
+	{
+		wprintf(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Optional parameter: usageAuth
+	if (argc > 4)
+	{
+		usageAuth = argv[4];
+		importFlags |= NCRYPT_DO_NOT_FINALIZE_FLAG;
+		if (!wcscmp(usageAuth, L"@"))
+		{
+			// Caller requested UI
+			usageAuth = NULL;
+			tUIRequested = TRUE;
+			rgbUiPolicy.pszFriendlyName = keyName;
+			rgbUiPolicy.dwFlags = NCRYPT_UI_PROTECT_KEY_FLAG;
+			rgbUiPolicy.pszDescription = optionalPIN;
+		}
+		else if (!wcscmp(usageAuth, L"!"))
+		{
+			// Caller requested UI
+			usageAuth = NULL;
+			tUIRequested = TRUE;
+			rgbUiPolicy.pszFriendlyName = keyName;
+			rgbUiPolicy.dwFlags = NCRYPT_UI_FORCE_HIGH_PROTECTION_FLAG;
+			rgbUiPolicy.pszDescription = mandatoryPIN;
+		}
+	}
+
+	// Optional parameter: migrationAuth
+	if (argc > 5)
+	{
+		migrationAuth = argv[5];
+		importFlags |= NCRYPT_DO_NOT_FINALIZE_FLAG;
+	}
+
+	// Create the key
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
+		&hProv,
+		MS_PLATFORM_CRYPTO_PROVIDER,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	keyImportParameters[0].cbBuffer = (ULONG)((wcslen(keyName) + 1) * sizeof(WCHAR));
+	keyImportParameters[0].BufferType = NCRYPTBUFFER_PKCS_KEY_NAME;
+	keyImportParameters[0].pvBuffer = (PVOID)keyName;
+
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptImportKey(
+		hProv,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB, //BCRYPT_RSAPRIVATE_BLOB
+		&parameterList,
+		&hKey,
+		pbKey,
+		cbKey,
+		importFlags))))
+	{
+		goto Cleanup;
+	}
+
+	if ((importFlags & NCRYPT_DO_NOT_FINALIZE_FLAG) != NULL)
+	{
+		if (tUIRequested == FALSE)
+		{
+			if ((usageAuth != NULL) && (wcslen(usageAuth) != 0))
+			{
+				if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+					hKey,
+					NCRYPT_PIN_PROPERTY,
+					(PBYTE)usageAuth,
+					(DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+					0))))
+				{
+					goto Cleanup;
+				}
+			}
+		}
+		else
+		{
+			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+				hKey,
+				NCRYPT_UI_POLICY_PROPERTY,
+				(PBYTE)&rgbUiPolicy,
+				sizeof(NCRYPT_UI_POLICY),
+				0))))
+			{
+				goto Cleanup;
+			}
+		}
+
+		if (migrationAuth != NULL)
+		{
+			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+				hKey,
+				NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY,
+				(PBYTE)migrationAuth,
+				(DWORD)((wcslen(migrationAuth) + 1) * sizeof(WCHAR)),
+				0))))
+			{
+				goto Cleanup;
+			}
+		}
+
+		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptFinalizeKey(hKey, 0))))
+		{
+			goto Cleanup;
+		}
+	}
+
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_RSAPUBLIC_BLOB,
+		NULL,
+		pbPubKey,
+		sizeof(pbPubKey),
+		&cbPubKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	// Output results
+	if (FAILED(hr = PcpToolDisplayKey(keyName, pbPubKey, cbPubKey, 0)))
+	{
+		goto Cleanup;
+	}
+
+Cleanup:
+	if (hKey != NULL)
+	{
+		NCryptFreeObject(hKey);
+		hKey = NULL;
+	}
+	if (hProv != NULL)
+	{
+		NCryptFreeObject(hProv);
+		hProv = NULL;
+	}
+	ZeroAndFree((PVOID*)&pbKey, cbKey);
+	PcpToolCallResult(L"PcpToolImportKey()", hr);
+	return hr;
+}
+
+HRESULT
 PcpToolExportKey(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
