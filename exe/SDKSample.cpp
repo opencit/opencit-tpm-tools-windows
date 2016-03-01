@@ -22,7 +22,6 @@ Abstract:
 --*/
 
 #include "stdafx.h"
-#include <stdlib.h>
 
 HRESULT
 GetCACertContext(
@@ -2030,7 +2029,7 @@ the key and Identity Binding, that is the proof of posession.
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<IdentityBinding size=\"%u\">", cbIdBinding);
+    wprintf(L"<IdentityBinding size=\"%lu\">", cbIdBinding);
     for(UINT32 n = 0; n < cbIdBinding; n++)
     {
         wprintf(L"%02x", pbIdBinding[n]);
@@ -2255,7 +2254,7 @@ the key and Identity Binding, that is the proof of posession.
 			sizeof(chosenIDHash)/sizeof(chosenIDHash[0]),
 			0))))
 		{
-			wprintf(L"Wrong with setProperty idbinding %s\n", chosenIDHash);
+			wprintf(L"Wrong with setProperty idbinding\n");
 			goto Cleanup;
 		}
 	}
@@ -2909,7 +2908,7 @@ data that may be release if the handshake was successful.
     // Output results
     wprintf(L"<Activation>\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"<Secret size=\"%u\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
+    wprintf(L"<Secret size=\"%lu\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
     wprintf(L"</Activation>\n");
 
 Cleanup:
@@ -3358,7 +3357,7 @@ around 500ms to create a quote in the log.
         if(valueType == REG_BINARY)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<QuoteKey name=\"%s\" size=\"%u\">", keyName, cbAikPub);
+            wprintf(L"<QuoteKey name=\"%s\" size=\"%lu\">", keyName, cbAikPub);
             for(UINT32 n = 0; n < cbAikPub; n++)
             {
                 wprintf(L"%02x", pbAikPub[n]);
@@ -3409,7 +3408,7 @@ around 500ms to create a quote in the log.
         if(valueType == REG_BINARY)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<QuoteKey name=\"%s\" size=\"%u\">", keyName, cbAikPub);
+            wprintf(L"<QuoteKey name=\"%s\" size=\"%lu\">", keyName, cbAikPub);
             for(UINT32 n = 0; n < cbAikPub; n++)
             {
                 wprintf(L"%02x", pbAikPub[n]);
@@ -3599,7 +3598,7 @@ or in the machine context.
                 PcpToolLevelPrefix(2);
                 wprintf(L"<Name>%s</Name>\n",pKeyName->pszName);
                 PcpToolLevelPrefix(2);
-                wprintf(L"<KeyLength>%u</KeyLength>\n", keyLength);
+                wprintf(L"<KeyLength>%lu</KeyLength>\n", keyLength);
                 PcpToolLevelPrefix(2);
                 wprintf(L"<PubKeyDigest>");
                 for(UINT32 n = 0; n < sizeof(pubKeyDigest); n++)
@@ -8809,7 +8808,7 @@ HRESULT PcpToolNVRead(
 	/* call nvreadvalue to read 20 bytes */
 	hr = TpmNVReadValue(nvIndex, pbData, cbData, &rspDLen);
 	if (hr != S_OK) {
-		wprintf(L"tpm nv readvalue failed with return value %d\n", hr);
+		wprintf(L"tpm nv readvalue failed with return value %lu\n", hr);
 	}
 	else {
 		//wprintf(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
@@ -8873,7 +8872,7 @@ HRESULT PcpToolNVWrite(
 	/* call the same function TPMNVWrite */
 	hr = TpmNVWriteValueAuth(nvIndex, (PBYTE)&nvAuthDigest[0], 20, pbData, cbData);
 	if (hr != S_OK) {
-		wprintf(L"tpm nv writevalueauth failed with return value %d\n", hr);
+		wprintf(L"tpm nv writevalueauth failed with return value %lu\n", hr);
 	}
 	else {
 		wprintf(L"tpm nv writevalueauth succeeds!\n");
@@ -8950,7 +8949,7 @@ HRESULT PcpToolNVDefine(
 
 	hr = TpmNVDefineSpace(nvIndex, nvIndexSize, (PBYTE)&nvAuthDigest[0], permissions);
 	if (hr != S_OK) {
-		wprintf(L"tpm nv_define failed with return code %d\n", hr);
+		wprintf(L"tpm nv_define failed with return code %lu\n", hr);
 	}
 	else {
 		wprintf(L"tpm nv_define succeeds!\n");
@@ -9000,7 +8999,7 @@ HRESULT PcpToolNVRelease(
 	/* call the same function TPMNVDefineSpace but with size 0 to release the NVindex */
 	hr = TpmNVDefineSpace(nvIndex, 0, (PBYTE)&nvAuthDigest[0], permissions);
 	if (hr != S_OK) {
-		wprintf(L"tpm nvrelease failed with return code %d\n", hr);
+		wprintf(L"tpm nvrelease failed with return code lu\n", hr);
 	}
 	else {
 		wprintf(L"tpm nvrelease succeeds!\n");
@@ -9057,7 +9056,7 @@ HRESULT PcpToolPCRExtend(
 	/* call the same function TPMNVWrite */
 	hr = TpmPCRExtend(pcrIndex, pbDigest, pbNewDigest);
 	if (hr != S_OK) {
-		wprintf(L"tpm pcrextend failed with return value %d\n", hr);
+		wprintf(L"tpm pcrextend failed with return value %lu\n", hr);
 	}
 	else {
 		wprintf(L"tpm pcrextend succeeds with new value: ");
