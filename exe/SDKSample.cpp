@@ -23,6 +23,8 @@ Abstract:
 
 #include "stdafx.h"
 
+#define ARG_MAX 8191 // this is just a boundary for the max length of input parameter for security checking
+
 HRESULT
 GetCACertContext(
     _In_reads_z_(MAX_PATH) LPWSTR szUserStore,
@@ -37,7 +39,7 @@ GetCACertContext(
     DWORD dwCaCertsFound = 0;
 
     if((szUserStore == NULL) ||
-       (wcslen(szUserStore) == 0) ||
+       (wcsnlen_s(szUserStore, ARG_MAX) == 0) ||
        (ppCaCert == NULL))
     {
         hr = E_INVALIDARG;
@@ -219,7 +221,7 @@ IssueCertificate(
     // Parameter checkes
     if((pCaCert == NULL) ||
        (szSubject == NULL) ||
-       (wcslen(szSubject) == 0) ||
+	   (wcsnlen_s(szSubject, MAX_PATH) == 0) ||
        (hSubjectKeyPub == NULL) ||
        ((cbOutput != 0) && (pbOutput == NULL)) ||
        (pcbResult == NULL))
@@ -275,7 +277,7 @@ IssueCertificate(
     if(!WideCharToMultiByte(CP_UTF8,
                             WC_ERR_INVALID_CHARS,
                             szSubject,
-                            (int)wcslen(szSubject),
+							(int)wcsnlen_s(szSubject, MAX_PATH),
                             (LPSTR)subjectCommonName,
                             MAX_PATH,
                             NULL,
@@ -461,7 +463,7 @@ ProtectData(
     {
         goto Cleanup;
     }
-    memcpy(pbBuffer, pbData, min(cbData, cbBuffer));
+    memcpy_s(pbBuffer, cbBuffer, pbData, min(cbData, cbBuffer));
 
     // Create the key and set up the AES engine
     if(FAILED(hr = HRESULT_FROM_NT(BCryptOpenAlgorithmProvider(&hAlg,
@@ -525,7 +527,7 @@ ProtectData(
     }
 
     // Copy the output
-    memcpy(pbData, pbBuffer, cbData);
+    memcpy_s(pbData, cbData, pbBuffer, cbData);
 
 Cleanup:
     if(hKey != NULL)
@@ -1264,7 +1266,7 @@ Obtain entropy from the TPM. Optionally stir the entropy generator in the TPM.
     // Optional Parameter: Seed value
     if(argc > 3)
     {
-        cbSeedLen = (UINT32)wcslen(argv[3]) * sizeof(WCHAR);
+		cbSeedLen = (UINT32)wcsnlen_s(argv[3], ARG_MAX) * sizeof(WCHAR);
         if(cbSeedLen > 0)
         {
             if((UINT32)cbSeedLen <= cbRandom)
@@ -1617,7 +1619,7 @@ usageAuth value and a migrationAuth
     }
 
     // Optional parameter: usageAuth
-    if((argc > 3) && (argv[3] != NULL) && (wcslen(argv[3]) != 0))
+    if((argc > 3) && (argv[3] != NULL) && (wcsnlen_s(argv[3], ARG_MAX) != 0))
     {
         usageAuth = argv[3];
         if(!wcscmp(usageAuth, L"@"))
@@ -1641,7 +1643,7 @@ usageAuth value and a migrationAuth
     }
 
     // Optional parameter: migrationAuth
-    if((argc > 4) && (argv[4] != NULL) && (wcslen(argv[4]) != 0))
+    if((argc > 4) && (argv[4] != NULL) && (wcsnlen_s(argv[4], ARG_MAX) != 0))
     {
         migrationAuth = argv[4];
     }
@@ -1706,13 +1708,13 @@ usageAuth value and a migrationAuth
 
     if(tUIRequested == FALSE)
     {
-        if((usageAuth != NULL) && (wcslen(usageAuth) != 0))
+		if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
         {
             if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                         hKey,
                                         NCRYPT_PIN_PROPERTY,
                                         (PBYTE)usageAuth,
-                                        (DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+										(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                         0))))
             {
                 goto Cleanup;
@@ -1732,13 +1734,13 @@ usageAuth value and a migrationAuth
         }
     }
 
-    if((migrationAuth != NULL) && (wcslen(migrationAuth) != 0))
+	if ((migrationAuth != NULL) && (wcsnlen_s(migrationAuth, ARG_MAX) != 0))
     {
         if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                     hKey,
                                     NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY,
                                     (PBYTE)migrationAuth,
-                                    (DWORD)((wcslen(migrationAuth) + 1) * sizeof(WCHAR)),
+									(DWORD)((wcsnlen_s(migrationAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                     0))))
         {
             goto Cleanup;
@@ -1865,13 +1867,13 @@ the key and Identity Binding, that is the proof of posession.
     }
 
     // Optional parameter: File to store IdBinding
-    if((argc > 3) && (argv[3] != NULL) && (wcslen(argv[3]) != 0))
+	if ((argc > 3) && (argv[3] != NULL) && (wcsnlen_s(argv[3], ARG_MAX) != 0))
     {
         idBindingFile = argv[3];
     }
 
     // Optional parameter: nonce
-    if((argc > 4) && (argv[4] != NULL) && (wcslen(argv[4]) != 0))
+	if ((argc > 4) && (argv[4] != NULL) && (wcsnlen_s(argv[4], ARG_MAX) != 0))
     {
         nonce = argv[4];
         if(FAILED(hr = TpmAttiShaHash(
@@ -1879,7 +1881,7 @@ the key and Identity Binding, that is the proof of posession.
                             NULL,
                             0,
                             (PBYTE)nonce,
-                            (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+							(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                             nonceDigest,
                             sizeof(nonceDigest),
                             &result)))
@@ -1889,7 +1891,7 @@ the key and Identity Binding, that is the proof of posession.
     }
 
     // Optional parameter: usageAuth
-    if((argc > 5) && (argv[5] != NULL) && (wcslen(argv[5]) != 0))
+	if ((argc > 5) && (argv[5] != NULL) && (wcsnlen_s(argv[5], ARG_MAX) != 0))
     {
         usageAuth = argv[5];
         if(!wcscmp(usageAuth, L"@"))
@@ -1934,13 +1936,13 @@ the key and Identity Binding, that is the proof of posession.
 
     if(tUIRequested == FALSE)
     {
-        if((usageAuth != NULL) && (wcslen(usageAuth) != 0))
+		if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
         {
             if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                         hKey,
                                         NCRYPT_PIN_PROPERTY,
                                         (PBYTE)usageAuth,
-                                        (DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+										(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                         0))))
             {
                 goto Cleanup;
@@ -2054,11 +2056,11 @@ Cleanup:
 
 // convert from hex to WCHAR
 int hexStringToWstr(PCWSTR hexStr, WCHAR * byteStr) {
-	int sizeInt = wcslen(hexStr) / sizeof(WCHAR);
+	int sizeInt = wcsnlen_s(hexStr, ARG_MAX) / sizeof(WCHAR);
 	for (int i = 0; i < sizeInt; i++) {
 		int index = 2 * i;
 		WCHAR bstr[3] = { 0 }; //convert every two char in hex to one char
-		memcpy(bstr, hexStr + index, sizeof(WCHAR)*2);
+		memcpy_s(bstr, sizeof(WCHAR)*3, hexStr + index, sizeof(WCHAR) * 2);
 		byteStr[i] = (WCHAR)wcstol(bstr, NULL, 16);
 	}
 	return sizeInt;
@@ -2066,11 +2068,11 @@ int hexStringToWstr(PCWSTR hexStr, WCHAR * byteStr) {
 
 // convert from hex to BYTE
 int hexStringToByteArray(PCWSTR hexStr, BYTE * byteStr) {
-	int sizeInt = wcslen(hexStr) / sizeof(WCHAR);
+	int sizeInt = wcsnlen_s(hexStr, ARG_MAX) / sizeof(WCHAR);
 	for (int i = 0; i < sizeInt; i++) {
 		int index = 2 * i;
 		WCHAR bstr[3] = { 0 }; //convert every two char in hex to one char
-		memcpy(bstr, hexStr + index, sizeof(WCHAR) * 2);
+		memcpy_s(bstr, sizeof(WCHAR)*3, hexStr + index, sizeof(WCHAR) * 2);
 		byteStr[i] = (BYTE)wcstol(bstr, NULL, 16);
 	}
 	return sizeInt;
@@ -2141,7 +2143,7 @@ the key and Identity Binding, that is the proof of posession.
 	}
 
 	// this is the nonce/choseIdHash
-	if ((argc > 3) && (argv[3] != NULL) && (wcslen(argv[3]) != 0))
+	if ((argc > 3) && (argv[3] != NULL) && (wcsnlen_s(argv[3], ARG_MAX) != 0))
 	{
 		privCA = argv[3];
 		hexStringToByteArray(privCA, chosenIDHash);
@@ -2156,7 +2158,7 @@ the key and Identity Binding, that is the proof of posession.
 	}
 
 	// Optional parameter: usageAuth
-	if ((argc > 4) && (argv[4] != NULL) && (wcslen(argv[4]) != 0))
+	if ((argc > 4) && (argv[4] != NULL) && (wcsnlen_s(argv[4], ARG_MAX) != 0))
 	{
 		usageAuth = argv[4];
 		hexStringToWstr(usageAuth, aikSecret);
@@ -2207,13 +2209,13 @@ the key and Identity Binding, that is the proof of posession.
 	// set the usageauth/aiksecret
 	if (tUIRequested == FALSE)
 	{
-		if ((usageAuth != NULL) && (wcslen(usageAuth) != 0))
+		if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
 		{
 			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 				hKey,
 				NCRYPT_PIN_PROPERTY,
 				(PBYTE)aikSecret,
-				(DWORD)((wcslen(aikSecret) + 1) * sizeof(WCHAR)),
+				(DWORD)((wcsnlen_s(aikSecret, ARG_MAX) + 1) * sizeof(WCHAR)),
 				0))))
 			{
 				wprintf(L"Wrong with setProperty usageAuth %s\n", aikSecret);
@@ -2632,7 +2634,7 @@ that encrypts a certificate for the AIK for example.
                             NULL,
                             0,
                             (PBYTE)nonce,
-                            (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+							(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                             nonceDigest,
                             sizeof(nonceDigest),
                             &result)))
@@ -2706,7 +2708,7 @@ that encrypts a certificate for the AIK for example.
                         (nonce) ? nonceDigest : NULL,
                         (nonce) ? sizeof(nonceDigest) : 0,
                         (PBYTE)activationSecret,
-                        (UINT16)((wcslen(activationSecret) + 1) *
+						(UINT16)((wcsnlen_s(activationSecret, ARG_MAX) + 1) *
                             sizeof(WCHAR)),
                         NULL,
                         0,
@@ -2725,7 +2727,7 @@ that encrypts a certificate for the AIK for example.
                         (nonce) ? nonceDigest : NULL,
                         (nonce) ? sizeof(nonceDigest) : 0,
                         (PBYTE)activationSecret,
-                        (UINT16)((wcslen(activationSecret) + 1) *
+						(UINT16)((wcsnlen_s(activationSecret, ARG_MAX) + 1) *
                             sizeof(WCHAR)),
                         pbActivationBlob,
                         cbActivationBlob,
@@ -3050,7 +3052,7 @@ data that may be release if the handshake was successful.
 		hKey,
 		NCRYPT_PIN_PROPERTY,
 		(PBYTE)usageAuth,
-		(DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+		(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
 		0))))
 	{
 		goto Cleanup;
@@ -3876,7 +3878,7 @@ Change the useageAuth on a key.
                                 hKey,
                                 NCRYPT_PIN_PROPERTY,
                                 (PBYTE)usageAuth,
-                                (DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+								(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                 0))))
     {
         goto Cleanup;
@@ -3887,7 +3889,7 @@ Change the useageAuth on a key.
                                 hKey,
                                 NCRYPT_PCP_CHANGEPASSWORD_PROPERTY,
                                 (PBYTE)newUsageAuth,
-                                (DWORD)((wcslen(newUsageAuth) + 1) * sizeof(WCHAR)),
+								(DWORD)((wcsnlen_s(newUsageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                 0))))
     {
         goto Cleanup;
@@ -4040,7 +4042,7 @@ usageAuth value and a migrationAuth
         goto Cleanup;
     }
 
-    keyImportParameters[0].cbBuffer = (ULONG)((wcslen(keyName) + 1) * sizeof(WCHAR));
+	keyImportParameters[0].cbBuffer = (ULONG)((wcsnlen_s(keyName, ARG_MAX) + 1) * sizeof(WCHAR));
     keyImportParameters[0].BufferType = NCRYPTBUFFER_PKCS_KEY_NAME;
     keyImportParameters[0].pvBuffer = (PVOID)keyName;
 
@@ -4061,13 +4063,13 @@ usageAuth value and a migrationAuth
     {
         if(tUIRequested == FALSE)
         {
-            if((usageAuth != NULL) && (wcslen(usageAuth) != 0))
+			if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
             {
                 if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                             hKey,
                                             NCRYPT_PIN_PROPERTY,
                                             (PBYTE)usageAuth,
-                                            (DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+											(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                             0))))
                 {
                     goto Cleanup;
@@ -4093,7 +4095,7 @@ usageAuth value and a migrationAuth
                                         hKey,
                                         NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY,
                                         (PBYTE)migrationAuth,
-                                        (DWORD)((wcslen(migrationAuth) + 1) * sizeof(WCHAR)),
+										(DWORD)((wcsnlen_s(migrationAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                         0))))
             {
                 goto Cleanup;
@@ -4274,7 +4276,7 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
-	keyImportParameters[0].cbBuffer = (ULONG)((wcslen(keyName) + 1) * sizeof(WCHAR));
+	keyImportParameters[0].cbBuffer = (ULONG)((wcsnlen_s(keyName, ARG_MAX) + 1) * sizeof(WCHAR));
 	keyImportParameters[0].BufferType = NCRYPTBUFFER_PKCS_KEY_NAME;
 	keyImportParameters[0].pvBuffer = (PVOID)keyName;
 
@@ -4295,13 +4297,13 @@ usageAuth value and a migrationAuth
 	{
 		if (tUIRequested == FALSE)
 		{
-			if ((usageAuth != NULL) && (wcslen(usageAuth) != 0))
+			if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
 			{
 				if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 					hKey,
 					NCRYPT_PIN_PROPERTY,
 					(PBYTE)usageAuth,
-					(DWORD)((wcslen(usageAuth) + 1) * sizeof(WCHAR)),
+					(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
 					0))))
 				{
 					goto Cleanup;
@@ -4327,7 +4329,7 @@ usageAuth value and a migrationAuth
 				hKey,
 				NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY,
 				(PBYTE)migrationAuth,
-				(DWORD)((wcslen(migrationAuth) + 1) * sizeof(WCHAR)),
+				(DWORD)((wcsnlen_s(migrationAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
 				0))))
 			{
 				goto Cleanup;
@@ -4458,7 +4460,7 @@ Export a user key from the PCP storage.
                                 hKey,
                                 NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY,
                                 (PBYTE)migrationAuth,
-                                (DWORD)((wcslen(migrationAuth) + 1) * sizeof(WCHAR)),
+								(DWORD)((wcsnlen_s(migrationAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
                                 0))))
     {
         goto Cleanup;
@@ -4752,7 +4754,7 @@ proof.
                                 NULL,
                                 0,
                                 (PBYTE)nonce,
-                                (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+								(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                                 nonceDigest,
                                 sizeof(nonceDigest),
                                 &result)))
@@ -4767,7 +4769,7 @@ proof.
         aikAuthValue = argv[5];
     }
 
-    if(wcslen(aikName) > 0)
+	if (wcsnlen_s(aikName, ARG_MAX) > 0)
     {
         // Open AIK
         if(FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
@@ -4786,13 +4788,13 @@ proof.
         {
             goto Cleanup;
         }
-        if((aikAuthValue != NULL) && (wcslen(aikAuthValue) != 0))
+		if ((aikAuthValue != NULL) && (wcsnlen_s(aikAuthValue, ARG_MAX) != 0))
         {
             if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                         hAik,
                                         NCRYPT_PIN_PROPERTY,
                                         (PBYTE)aikAuthValue,
-                                        (DWORD)((wcslen(aikAuthValue) + 1) * sizeof(WCHAR)),
+										(DWORD)((wcsnlen_s(aikAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
                                         0))))
             {
                 goto Cleanup;
@@ -4948,7 +4950,7 @@ proof.
 		aikAuthValue = argv[5];
 	}
 
-	if (wcslen(aikName) > 0)
+	if (wcsnlen_s(aikName, ARG_MAX) > 0)
 	{
 		// Open AIK
 		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
@@ -4967,13 +4969,13 @@ proof.
 		{
 			goto Cleanup;
 		}
-		if ((aikAuthValue != NULL) && (wcslen(aikAuthValue) != 0))
+		if ((aikAuthValue != NULL) && (wcsnlen_s(aikAuthValue, ARG_MAX) != 0))
 		{
 			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 				hAik,
 				NCRYPT_PIN_PROPERTY,
 				(PBYTE)aikAuthValue,
-				(DWORD)((wcslen(aikAuthValue) + 1) * sizeof(WCHAR)),
+				(DWORD)((wcsnlen_s(aikAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
 				0))))
 			{
 				goto Cleanup;
@@ -5593,7 +5595,7 @@ proof.
     if(argc > 3)
     {
         aikName = argv[3];
-        if(wcslen(aikName) > 0)
+		if (wcsnlen_s(aikName, ARG_MAX) > 0)
         {
             if(FAILED(hr = PcpToolReadFile(aikName, NULL, 0, &cbAikPub)))
             {
@@ -5626,14 +5628,14 @@ proof.
     if(argc > 4)
     {
         nonce = argv[4];
-        if(wcslen(nonce) > 0)
+		if (wcsnlen_s(nonce, ARG_MAX) > 0)
         {
             if(FAILED(hr = TpmAttiShaHash(
                                     BCRYPT_SHA1_ALGORITHM,
                                     NULL,
                                     0,
                                     (PBYTE)nonce,
-                                    (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+									(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                                     nonceDigest,
                                     sizeof(nonceDigest),
                                     &cbNonceDigest)))
@@ -5648,7 +5650,7 @@ proof.
     }
 
     // Load the AIKPub
-    if(wcslen(aikName) > 0)
+	if (wcsnlen_s(aikName, ARG_MAX) > 0)
     {
         if(FAILED(hr = HRESULT_FROM_NT(BCryptOpenAlgorithmProvider(
                                         &hAlg,
@@ -5858,13 +5860,13 @@ PcpToolGetKeyAttestationFromKey(
     }
 
     // Optional parameter: Attestation file
-    if((argc > 3) && (wcslen(argv[3]) > 0))
+	if ((argc > 3) && (wcsnlen_s(argv[3], ARG_MAX) > 0))
     {
         attestationFile = argv[3];
     }
 
     // Optional parameter: AIK name
-    if((argc > 4) && (wcslen(argv[4]) > 0))
+	if ((argc > 4) && (wcsnlen_s(argv[4], ARG_MAX) > 0))
     {
         aikName = argv[4];
     }
@@ -6021,7 +6023,7 @@ PcpToolGetKeyAttestation(
                                 NULL,
                                 0,
                                 (PBYTE)nonce,
-                                (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+								(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                                 nonceDigest,
                                 sizeof(nonceDigest),
                                 &result)))
@@ -6031,13 +6033,13 @@ PcpToolGetKeyAttestation(
     }
 
     // Optional parameter: key auth
-    if((argc > 6) && (argv[6] != NULL) && (wcslen(argv[6]) != 0))
+	if ((argc > 6) && (argv[6] != NULL) && (wcsnlen_s(argv[6], ARG_MAX) != 0))
     {
         keyAuthValue = argv[6];
     }
 
     // Optional parameter: aik auth
-    if((argc > 7) && (argv[7] != NULL) && (wcslen(argv[7]) != 0))
+	if ((argc > 7) && (argv[7] != NULL) && (wcsnlen_s(argv[7], ARG_MAX) != 0))
     {
         aikAuthValue = argv[7];
     }
@@ -6059,13 +6061,13 @@ PcpToolGetKeyAttestation(
     {
         goto Cleanup;
     }
-    if((keyAuthValue != NULL) && (wcslen(keyAuthValue) != 0))
+	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
     {
         if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                     hKey,
                                     NCRYPT_PIN_PROPERTY,
                                     (PBYTE)keyAuthValue,
-                                    (DWORD)((wcslen(keyAuthValue) + 1) * sizeof(WCHAR)),
+									(DWORD)((wcsnlen_s(keyAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
                                     0))))
         {
             goto Cleanup;
@@ -6080,13 +6082,13 @@ PcpToolGetKeyAttestation(
     {
         goto Cleanup;
     }
-    if((aikAuthValue != NULL) && (wcslen(aikAuthValue) != 0))
+	if ((aikAuthValue != NULL) && (wcsnlen_s(aikAuthValue, ARG_MAX) != 0))
     {
         if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                     hAik,
                                     NCRYPT_PIN_PROPERTY,
                                     (PBYTE)aikAuthValue,
-                                    (DWORD)((wcslen(aikAuthValue) + 1) * sizeof(WCHAR)),
+									(DWORD)((wcsnlen_s(aikAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
                                     0))))
         {
             goto Cleanup;
@@ -6269,7 +6271,7 @@ PcpToolValidateKeyAttestation(
     if(argc > 3)
     {
         aikName = argv[3];
-        if(wcslen(aikName) > 0)
+		if (wcsnlen_s(aikName, ARG_MAX) > 0)
         {
             if(FAILED(hr = PcpToolReadFile(aikName, NULL, 0, &cbAikPub)))
             {
@@ -6302,7 +6304,7 @@ PcpToolValidateKeyAttestation(
     if(argc > 4)
     {
         nonce = argv[4];
-        if(wcslen(nonce) > 0)
+		if (wcsnlen_s(nonce, ARG_MAX) > 0)
         {
             nonce = argv[4];
             if(FAILED(hr = TpmAttiShaHash(
@@ -6310,7 +6312,7 @@ PcpToolValidateKeyAttestation(
                                     NULL,
                                     0,
                                     (PBYTE)nonce,
-                                    (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+									(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                                     nonceDigest,
                                     sizeof(nonceDigest),
                                     &cbNonceDigest)))
@@ -6668,7 +6670,7 @@ PcpToolEncrypt(
     if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
                                     hKey,
                                     (PBYTE)decData,
-                                    (DWORD)((wcslen(decData) + 1) * sizeof(WCHAR)),
+									(DWORD)((wcsnlen_s(decData, ARG_MAX) + 1) * sizeof(WCHAR)),
                                     NULL,
                                     NULL,
                                     0,
@@ -6686,7 +6688,7 @@ PcpToolEncrypt(
     if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
                                     hKey,
                                     (PBYTE)decData,
-                                    (DWORD)((wcslen(decData) + 1) * sizeof(WCHAR)),
+									(DWORD)((wcsnlen_s(decData, ARG_MAX) + 1) * sizeof(WCHAR)),
                                     NULL,
                                     NULL,
                                     0,
@@ -6826,13 +6828,13 @@ PcpToolDecrypt(
     {
         goto Cleanup;
     }
-    if((keyAuthValue != NULL) && (wcslen(keyAuthValue) != 0))
+	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
     {
         if(FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
                                     hKey,
                                     NCRYPT_PIN_PROPERTY,
                                     (PBYTE)keyAuthValue,
-                                    (DWORD)((wcslen(keyAuthValue) + 1) * sizeof(WCHAR)),
+									(DWORD)((wcsnlen_s(keyAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
                                     0))))
         {
             goto Cleanup;
@@ -6943,7 +6945,7 @@ PcpToolWrapPlatformKey(
             goto Cleanup;
         }
 
-        if(wcslen(certFile) == 0)
+		if (wcsnlen_s(certFile, ARG_MAX) == 0)
         {
             pCertInStore = CryptUIDlgSelectCertificateFromStore(
                                                         hMyStore,
@@ -7025,7 +7027,7 @@ PcpToolWrapPlatformKey(
     if(argc > 3)
     {
         storageName = argv[3];
-        if(wcslen(storageName) > 0)
+		if (wcsnlen_s(storageName, ARG_MAX) > 0)
         {
             if(FAILED(hr = PcpToolReadFile(storageName, NULL, 0, &cbStoragePub)))
             {
@@ -7061,7 +7063,7 @@ PcpToolWrapPlatformKey(
     }
 
     // Optional parameter: usageAuth
-    if((argc > 5) && (argv[5] != NULL) && (wcslen(argv[5]) != 0))
+	if ((argc > 5) && (argv[5] != NULL) && (wcsnlen_s(argv[5], ARG_MAX) != 0))
     {
         usageAuth = argv[5];
     }
@@ -7133,7 +7135,7 @@ PcpToolWrapPlatformKey(
                                              n,
                                              NCRYPT_PCP_GENERIC_KEY,
                                              (PBYTE)usageAuth,
-                                             usageAuth ? (DWORD)(wcslen(usageAuth) * sizeof(WCHAR)) : 0,
+											 usageAuth ? (DWORD)(wcsnlen_s(usageAuth, ARG_MAX) * sizeof(WCHAR)) : 0,
                                              pcrMask,
                                              pbPcrTable,
                                              cbPcrTable,
@@ -7152,7 +7154,7 @@ PcpToolWrapPlatformKey(
                                              n,
                                              NCRYPT_PCP_GENERIC_KEY,
                                              (PBYTE)usageAuth,
-                                             usageAuth ? (DWORD)(wcslen(usageAuth) * sizeof(WCHAR)) : 0,
+											 usageAuth ? (DWORD)(wcsnlen_s(usageAuth, ARG_MAX) * sizeof(WCHAR)) : 0,
                                              pcrMask,
                                              pbPcrTable,
                                              cbPcrTable,
@@ -7306,7 +7308,7 @@ PcpToolImportPlatformKey(
     if(argc > 3)
     {
         keyName = argv[3];
-        keyProperties[0].cbBuffer = (ULONG)((wcslen(keyName) + 1) * sizeof(WCHAR));
+		keyProperties[0].cbBuffer = (ULONG)((wcsnlen_s(keyName, ARG_MAX) + 1) * sizeof(WCHAR));
         keyProperties[0].pvBuffer = (PVOID)keyName;
     }
     else
@@ -7486,7 +7488,7 @@ PcpToolGetVscKeyAttestationFromKey(
     }
 
     // Optional parameter: AIK name
-    if((argc > 3) && (wcslen(argv[3]) > 0))
+	if ((argc > 3) && (wcsnlen_s(argv[3], ARG_MAX) > 0))
     {
         aikName = argv[3];
     }
@@ -7593,7 +7595,7 @@ PcpToolGetVscKeyAttestationFromKey(
                                           hScProv,
                                           NCRYPT_READER_PROPERTY,
                                           (PBYTE)szReader,
-                                          ((DWORD)wcslen(szReader)+1) * sizeof(WCHAR),
+										  ((DWORD)wcsnlen_s(szReader, MAX_PATH) + 1) * sizeof(WCHAR),
                                           0))))
     {
         goto Cleanup;
@@ -7690,7 +7692,7 @@ PcpToolGetVscKeyAttestationFromKey(
                                           hProv,
                                           NCRYPT_PCP_ALTERNATE_KEY_STORAGE_LOCATION_PROPERTY,
                                           (PBYTE)szServiceKeyFolder,
-                                          ((DWORD)wcslen(szServiceKeyFolder)+1) * sizeof(WCHAR),
+										  ((DWORD)wcsnlen_s(szServiceKeyFolder, MAX_PATH) + 1) * sizeof(WCHAR),
                                           0))))
     {
         goto Cleanup;
@@ -8221,7 +8223,7 @@ that encrypts the certificate for the AIK.
                             NULL,
                             0,
                             (PBYTE)nonce,
-                            (UINT32)(wcslen(nonce) * sizeof(WCHAR)),
+							(UINT32)(wcsnlen_s(nonce, ARG_MAX) * sizeof(WCHAR)),
                             nonceDigest,
                             sizeof(nonceDigest),
                             &result)))
@@ -8861,7 +8863,7 @@ HRESULT PcpToolNVWrite(
 		NULL,
 		0,
 		(PBYTE)nvPassword,
-		(UINT32)(wcslen(nvPassword) * sizeof(WCHAR)),
+		(UINT32)(wcsnlen_s(nvPassword, ARG_MAX) * sizeof(WCHAR)),
 		nvAuthDigest,
 		sizeof(nvAuthDigest),
 		&result)))
@@ -8916,7 +8918,7 @@ HRESULT PcpToolNVDefine(
 		NULL,
 		0,
 		(PBYTE)nvPassword,
-		(UINT32)(wcslen(nvPassword) * sizeof(WCHAR)),
+		(UINT32)(wcsnlen_s(nvPassword, ARG_MAX) * sizeof(WCHAR)),
 		nvAuthDigest,
 		sizeof(nvAuthDigest),
 		&result)))
@@ -8933,7 +8935,7 @@ HRESULT PcpToolNVDefine(
 		NULL,
 		0,
 		(PBYTE)pOAuth,
-		(UINT32)(wcslen(pOAuth) * sizeof(WCHAR)),
+		(UINT32)(wcsnlen_s(pOAuth, ARG_MAX) * sizeof(WCHAR)),
 		OAuthDigest,
 		20,
 		&result)))
@@ -8988,7 +8990,7 @@ HRESULT PcpToolNVRelease(
 		NULL,
 		0,
 		(PBYTE)nvPassword,
-		(UINT32)(wcslen(nvPassword) * sizeof(WCHAR)),
+		(UINT32)(wcsnlen_s(nvPassword, ARG_MAX) * sizeof(WCHAR)),
 		nvAuthDigest,
 		sizeof(nvAuthDigest),
 		&result)))
@@ -9039,8 +9041,8 @@ HRESULT PcpToolPCRExtend(
 		goto Cleanup;
 	}
 	digestHex = argv[3]; // the digest in Hex
-	//wprintf(L"digestHex size: %d\n", wcslen(digestHex));
-	if (wcslen(digestHex) != 40) {
+	//wprintf(L"digestHex size: %d\n", wcsnlen_s(digestHex, ARG_MAX));
+	if (wcsnlen_s(digestHex, ARG_MAX) != 40) {
 		wprintf(L"Invalid length of digest value in hex: %d bytes\n", val);
 		hr = E_INVALIDARG;
 		goto Cleanup;

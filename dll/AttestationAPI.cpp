@@ -1904,7 +1904,7 @@ DllExport HRESULT TpmAttCreateAttestationfromLog(
 
     if(pbAikPubDigest != NULL)
     {
-        memcpy(pbAikPubDigest, pbAikPubDig, min(SHA1_DIGEST_SIZE, cbAikPubDig));
+		memcpy_s(pbAikPubDigest, SHA1_DIGEST_SIZE, pbAikPubDig, min(SHA1_DIGEST_SIZE, cbAikPubDig));
     }
 
 Cleanup:
@@ -2780,7 +2780,7 @@ DllExport HRESULT TpmAttCreateAttestationfromKey(
             }
             if(pbAikPubDigest != NULL)
             {
-                memcpy(pbAikPubDigest, pbAikPubDigestInternal, SHA1_DIGEST_SIZE);
+				memcpy_s(pbAikPubDigest, SHA1_DIGEST_SIZE, pbAikPubDigestInternal, SHA1_DIGEST_SIZE);
             }
             break;
         }
@@ -2830,9 +2830,9 @@ DllExport HRESULT TpmAttCreateAttestationfromKey(
     pAttestationBlob->cbSignature = cbSignature;
     pAttestationBlob->cbKeyBlob = cbKeyblob;
     cursor = pAttestationBlob->HeaderSize;
-    memcpy(&pbOutput[cursor], pbCertify, cbCertify);
+    memcpy_s(&pbOutput[cursor], (cbOutput-cursor), pbCertify, cbCertify);
     cursor += cbCertify;
-    memcpy(&pbOutput[cursor], pbSignature, cbSignature);
+	memcpy_s(&pbOutput[cursor], (cbOutput - cursor), pbSignature, cbSignature);
     cursor += cbSignature;
 
     if(FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(

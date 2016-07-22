@@ -115,18 +115,18 @@ KDFa(
     cursor = 0;
     pI = (PUINT32)&pbData[cursor];
     cursor += sizeof(UINT32);
-    memcpy(&pbData[cursor], label, cbLabel);
+    memcpy_s(&pbData[cursor], (cbData-cursor), label, cbLabel);
     cursor += (UINT32)cbLabel;
     pbData[cursor] = 0;
     cursor++;
     if(cbContextU != 0)
     {
-        memcpy(&pbData[cursor], pbContextU, cbContextU);
+		memcpy_s(&pbData[cursor], (cbData - cursor), pbContextU, cbContextU);
         cursor += cbContextU;
     }
     if(cbContextV != 0)
     {
-        memcpy(&pbData[cursor], pbContextV, cbContextV);
+		memcpy_s(&pbData[cursor], (cbData - cursor), pbContextV, cbContextV);
         cursor += cbContextV;
     }
     ENDIANSWAP_UINT32TOARRAY(bits, pbData, cursor);
@@ -170,14 +170,14 @@ KDFa(
         // Do we need the full buffer or is this the last iteration?
         if(cbIterationBuffer <= cbOutput - cursor)
         {
-            memcpy(&pbOutput[cursor],
+			memcpy_s(&pbOutput[cursor], (cbData - cursor),
                    pbIterationBuffer,
                    cbIterationBuffer);
             cursor += cbIterationBuffer;
         }
         else
         {
-            memcpy(&pbOutput[cursor],
+			memcpy_s(&pbOutput[cursor], (cbData - cursor),
                    pbIterationBuffer,
                    cbOutput - cursor);
             cursor += cbOutput - cursor;
@@ -265,7 +265,7 @@ CFB(
         goto Cleanup;
     }
 
-    memcpy(pbIVInternal, pbIv, cbIVInternal);
+	memcpy_s(pbIVInternal, cbIVInternal, pbIv, cbIVInternal);
     if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
                                   hSymKey,
                                   pbData,
@@ -284,7 +284,7 @@ CFB(
     {
         goto Cleanup;
     }
-    memcpy(pbIVInternal, pbIv, cbIVInternal);
+	memcpy_s(pbIVInternal, cbIVInternal, pbIv, cbIVInternal);
     if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
                                   hSymKey,
                                   pbData,
@@ -299,8 +299,8 @@ CFB(
     {
         goto Cleanup;
     }
-    memcpy(pbData, pbDataEncrypted, cbData);
-    memcpy(pbIv, pbIVInternal, cbIv);
+    memcpy_s(pbData, cbData, pbDataEncrypted, cbData);
+    memcpy_s(pbIv, cbIv, pbIVInternal, cbIv);
 
 Cleanup:
     ZeroAndFree((PVOID*)&pbIVInternal, cbIVInternal);
@@ -3413,7 +3413,7 @@ WrapPlatformKey20(
     {
         goto Cleanup;
     }
-    memcpy(&pbPrivateKey[privateKeyCursor], keyName, sizeof(keyName));
+	memcpy_s(&pbPrivateKey[privateKeyCursor], (cbPrivateKey -privateKeyCursor), keyName, sizeof(keyName));
 
     // Calculate the symmetric that will be used to encrypt the sensitive structure
     // symKey = KDFa(npNameAlg, seed, “STORAGE”, name, NULL , bits)
