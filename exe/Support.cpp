@@ -732,7 +732,7 @@ PcpToolDisplayKey(
     PcpToolLevelPrefix(level);
     wprintf(L"<RSAKey size=\"%u\"", cbKey);
     if((lpKeyName != NULL) &&
-       (wcslen(lpKeyName) != 0))
+       (wcsnlen_s(lpKeyName, 2097) != 0))
     {
         wprintf(L" keyName=\"%s\"", lpKeyName);
     }
