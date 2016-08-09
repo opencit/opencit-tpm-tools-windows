@@ -2098,14 +2098,12 @@ the key and Identity Binding, that is the proof of posession.
 	NCRYPT_KEY_HANDLE hKey = NULL;
 	DWORD dwKeyUsage = NCRYPT_PCP_IDENTITY_KEY;
 	PCWSTR keyName = NULL;
-	PCWSTR idBindingFile = NULL;
 	PCWSTR privCA = NULL;
 	PCWSTR usageAuth = NULL;
 	BYTE pbIdBinding[1024] = { 0 };
 	DWORD cbIdBinding = 0;
 	BYTE pbAikPub[1024] = { 0 };
 	DWORD cbAikPub = 0;
-	UINT32 result = 0;
 	BOOLEAN tUIRequested = false;
 	LPCWSTR optionalPIN = L"This AIK requires usage consent and an optional PIN.";
 	LPCWSTR mandatoryPIN = L"This AIK has a mandatory a PIN.";
@@ -2558,13 +2556,14 @@ that encrypts a certificate for the AIK for example.
         if(FAILED(hr = AllocateAndZero((PVOID*)&pbIdBinding, cbIdBinding)))
         {
             goto Cleanup;
-        }
-        if(FAILED(hr = PcpToolReadFile(idBindingFile,
-                                       pbIdBinding,
-                                       cbIdBinding,
-                                       &cbIdBinding)))
-        {
-            goto Cleanup;
+        } if(idBindingFile != NULL){
+            if(FAILED(hr = PcpToolReadFile(idBindingFile,
+                                        pbIdBinding,
+                                        cbIdBinding,
+                                        &cbIdBinding)))
+            {
+                goto Cleanup;
+            }
         }
     }
     else
@@ -2782,6 +2781,8 @@ Cleanup:
         BCryptCloseAlgorithmProvider(hAlg, 0);
         hAlg = NULL;
     }
+    if(activationBlobFile != NULL)
+        activationBlobFile = NULL;
     ZeroAndFree((PVOID*)&pbIdBinding, cbIdBinding);
     ZeroAndFree((PVOID*)&pbEkPub, cbEkPub);
     ZeroAndFree((PVOID*)&pbAikPub, cbAikPub);
@@ -5812,9 +5813,16 @@ PcpToolCreatePlatformAttestationFromLog(
     }
 
     // Output results
-    wprintf(L"AIK identifier for Trustpoint: '%s'. Log converted - OK!\n", aikName);
+    if(aikName != NULL)
+        wprintf(L"AIK identifier for Trustpoint: '%s'. Log converted - OK!\n", aikName);
+    else
+        wprintf(L"AIK identifier for Trustpoint is NULL.");
 
 Cleanup:
+    if(aikName != NULL)
+        aikName = NULL;
+    if(hr != NULL)
+        hr=NULL;
     ZeroAndFree((PVOID*)&pbLog, cbLog);
     ZeroAndFree((PVOID*)&pbAttestation, cbAttestation);
     PcpToolCallResult(L"PcpToolCreatePlatformAttestationFromLog()", hr);
@@ -8148,12 +8156,14 @@ that encrypts the certificate for the AIK.
         {
             goto Cleanup;
         }
-        if(FAILED(hr = PcpToolReadFile(idBindingFile,
-                                       pbIdBinding,
-                                       cbIdBinding,
-                                       &cbIdBinding)))
-        {
-            goto Cleanup;
+        if(idBindingFile != NULL){
+            if(FAILED(hr = PcpToolReadFile(idBindingFile,
+                                        pbIdBinding,
+                                        cbIdBinding,
+                                        &cbIdBinding)))
+            {
+                goto Cleanup;
+            }
         }
     }
     else
@@ -8499,6 +8509,8 @@ Cleanup:
         BCryptCloseAlgorithmProvider(hRng, 0);
         hAlg = NULL;
     }
+    if(activationBlobFile != NULL)
+        activationBlobFile = NULL;
     ZeroAndFree((PVOID*)&pbIdBinding, cbIdBinding);
     ZeroAndFree((PVOID*)&pbEkPub, cbEkPub);
     ZeroAndFree((PVOID*)&pbAikPub, cbAikPub);
@@ -8787,11 +8799,6 @@ HRESULT PcpToolNVRead(
 {
 	HRESULT hr = 0;
 	UINT32 nvIndex = 0;
-	UINT32 nvIndexSize = 0;
-	PCWSTR nvPassword = NULL;
-	PCWSTR permissions = NULL;
-	PCWSTR nvData = NULL;
-	UINT32 result = 0;
 	BYTE pbData[20] = { 0 };
 	UINT32 cbData = 20; // only read 20 bytes from the nvIndex area
 	UINT32 rspDLen = 0;
@@ -8830,9 +8837,7 @@ HRESULT PcpToolNVWrite(
 {
 	HRESULT hr = 0;
 	UINT32 nvIndex = 0;
-	UINT32 nvIndexSize = 0;
 	PCWSTR nvPassword = NULL;
-	PCWSTR permissions = NULL;
 	PCWSTR nvData = NULL;
 	BYTE nvAuthDigest[20] = { 0 };
 	UINT32 result = 0;
@@ -8967,7 +8972,6 @@ HRESULT PcpToolNVRelease(
 {
 	HRESULT hr = 0;
 	UINT32 nvIndex = 0;
-	UINT32 nvIndexSize = 0;
 	PCWSTR nvPassword = NULL;
 	PCWSTR permissions = NULL;
 	BYTE nvAuthDigest[20] = { 0 };
@@ -9019,7 +9023,6 @@ HRESULT PcpToolPCRExtend(
 	UINT32 pcrIndex = 0;
 	PCWSTR digestHex = NULL;
 	BYTE nvAuthDigest[20] = { 0 };
-	UINT32 result = 0;
 	BYTE pbDigest[20] = { 0 };
 	BYTE pbNewDigest[20] = { 0 };
 	UINT32 cbDigest = 0;

@@ -1799,13 +1799,14 @@ DllExport HRESULT TpmAttCreateAttestationfromLog(
         hr = E_INVALIDARG;
         goto Cleanup;
     }
-
-    // Is Quote recognized?
-    if((memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) != 0) &&
-       (memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) != 0))
-    {
-        hr = E_INVALIDARG;
-        goto Cleanup;
+    if(pbQuote != NULL){
+        // Is Quote recognized?
+        if((memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) != 0) &&
+        (memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) != 0))
+        {
+            hr = E_INVALIDARG;
+            goto Cleanup;
+        }
     }
 
     // Filter Log for relevant entries. The tpm driver uses the pcrMask = 0x0000F77f
@@ -1908,6 +1909,8 @@ DllExport HRESULT TpmAttCreateAttestationfromLog(
     }
 
 Cleanup:
+    if(pbQuote != NULL)
+        pbQuote = NULL;
     return hr;
 }
 

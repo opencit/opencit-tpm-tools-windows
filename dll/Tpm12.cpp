@@ -1085,7 +1085,7 @@ GenerateQuote12(
 
     // Calculate Quote output buffer
     cbRequired = sizeof(UINT16) +     // TPM_TAG_QUOTE_INFO2
-                 sizeof(UINT32) +     // ‘QUT2’
+                 sizeof(UINT32) +     // ï¿½QUT2ï¿½
                  SHA1_DIGEST_SIZE +   // externalData
                  cbPcrData +          // infoShort
                  cbVersionInfo +      // versionInfo
@@ -1108,7 +1108,7 @@ GenerateQuote12(
     {
         goto Cleanup;
     }
-    if(FAILED(hr = WriteBigEndian(pbQuote, cbQuote, pcbResult, (UINT32)'QUT2')))//‘QUT2’
+    if(FAILED(hr = WriteBigEndian(pbQuote, cbQuote, pcbResult, (UINT32)'QUT2')))//ï¿½QUT2ï¿½
     {
         goto Cleanup;
     }
@@ -3463,10 +3463,8 @@ _Out_ PUINT32 pcbResult
 	BYTE rsp[0x200] = { 0 };
 	UINT32 cbRsp = sizeof(rsp);
 	UINT32 cursorCmd = 0;
-	UINT32 cursorParamHash = 0;
 	UINT32 cursorRsp = 0;
 	UINT16 rspTag = 0;
-	UINT16 certifyType = 0;
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
 	UINT32 respSize = 0;
@@ -3753,13 +3751,6 @@ UINT32 permissions
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
 	UINT16 returnTag = 0;
-	PBYTE pbPcrData = NULL;
-	UINT32 cbPcrData = 26;
-	PBYTE pbVersionInfo = NULL;
-	UINT32 cbVersionInfo = 0;
-	PBYTE pbSignature = NULL;
-	UINT32 cbSignature = 0;
-	PBYTE pResponseAuth = NULL;
 	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
 
 	BYTE  pbAuthDigest[SHA1_DIGEST_SIZE] = { 0 };
@@ -3976,8 +3967,6 @@ CreateNvPublic(
 	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, val); // 1 byte
 	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, val); // 1 byte
 	WriteBigEndian(pcrInfoShort, 26, &pcrInfoCur, locality); //TPM_LOCALITY_SELECTION
-	PBYTE digestAtRelease = &pcrInfoShort[6];
-	UINT32 digestResult = 0;
 
 	//TPM_COMPOSITE_HASH set to 0 with 20 BYTES
 	BYTE pcrCompsite[] = {
@@ -4068,7 +4057,6 @@ BOOLEAN isEncryptAuthSupported(TBS_HCONTEXT hPlatformTbsHandle, UINT32 encType)
 	HRESULT hr = S_OK;
 	BYTE pSubCapXOR[4] = { 00, 00, 00, 0x0A };
 	BYTE pSubCapAES[4] = { 00, 00, 00, 0x06 };
-	UINT32 cbSubcap = 4;
 	BOOLEAN isSupported = false;
 	BYTE pbOutput[20] = { 0 };
 	UINT32 cbOutput = 20;
@@ -4135,20 +4123,10 @@ changeAuthOwner12(
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
 	UINT16 returnTag = 0;
-	PBYTE pbPcrData = NULL;
-	UINT32 cbPcrData = 26;
-	PBYTE pbVersionInfo = NULL;
-	UINT32 cbVersionInfo = 0;
-	PBYTE pbSignature = NULL;
-	UINT32 cbSignature = 0;
-	PBYTE pResponseAuth = NULL;
 	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
 
 	BYTE  pbAuthDigest[SHA1_DIGEST_SIZE] = { 0 };
-	UINT32 cbAuthDigest;
 	BYTE pbNvDataPublic[0x200] = { 0 };
-	UINT32 cbNvDataPublic = 0x200;
-	UINT32 dataPubSize = 0;
 	UINT32 cbSecret = 0;
 
 	BOOLEAN isXOR = false;
@@ -4365,13 +4343,6 @@ nvReadVaule12(
 	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
-	PBYTE pbPcrData = NULL;
-	UINT32 cbPcrData = 26;
-	PBYTE pbVersionInfo = NULL;
-	UINT32 cbVersionInfo = 0;
-	PBYTE pbSignature = NULL;
-	UINT32 cbSignature = 0;
-	PBYTE pResponseAuth = NULL;
 	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
 
 	BOOLEAN ownerAuthNeeded = false;
@@ -4561,13 +4532,6 @@ nvWriteVauleAuth12(
 	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
-	PBYTE pbPcrData = NULL;
-	UINT32 cbPcrData = 26;
-	PBYTE pbVersionInfo = NULL;
-	UINT32 cbVersionInfo = 0;
-	PBYTE pbSignature = NULL;
-	UINT32 cbSignature = 0;
-	PBYTE pResponseAuth = NULL;
 	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
 
 	// Check the parameters
@@ -4734,13 +4698,11 @@ pcrExtend12(
 )
 {
 	HRESULT hr = S_OK;
-	UINT32 cbRequired = 0;
 	BYTE cmd[0x200] = { 0 };
 	BYTE rsp[0x200] = { 0 };
 	BYTE paramHash[0x200] = { 0 };
 	UINT32 cbRsp = sizeof(rsp);
 	UINT32 cursorCmd = 0;
-	UINT32 cursorParamHash = 0;
 	UINT32 cursorRsp = 0;
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
