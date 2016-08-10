@@ -3901,7 +3901,7 @@ UINT32 permissions
 		rsp,
 		&cbRsp)))
 	{
-		wprintf(L" error hr: %x\n", hr);
+		wprintf(L" error hr: %lx\n", hr);
 		goto Cleanup;
 	}
 
@@ -4281,7 +4281,7 @@ changeAuthOwner12(
 		rsp,
 		&cbRsp)))
 	{
-		wprintf(L" error hr: %x\n", hr);
+		wprintf(L" error hr: %lx\n", hr);
 		goto Cleanup;
 	}
 
@@ -4345,7 +4345,7 @@ nvReadVaule12(
 	UINT32 returnCode = 0;
 	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
 
-	BOOLEAN ownerAuthNeeded = false;
+	//BOOLEAN ownerAuthNeeded = false;
 	PBYTE pRspData = NULL;
 
 	// Check the parameters
@@ -4356,13 +4356,13 @@ nvReadVaule12(
 		goto Cleanup;
 	}
 
-	if (ownerAuthNeeded) {
+	/*if (ownerAuthNeeded) {
 		// Start OIAP session
 		if (FAILED(hr = StartOIAPSession(hPlatformTbsHandle, &authHandle, pNonceEven, pNonceOdd)))
 		{
 			goto Cleanup;
 		}
-	}
+	}*/
 
 	// Build TPM_NV_WRITEVALUEAUTH command buffer
 	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, (UINT16)0x00c1))) //1 TPM_TAG_RQU_AUTH1_COMMAND
@@ -4389,7 +4389,7 @@ nvReadVaule12(
 	{
 		goto Cleanup;
 	}
-	if (ownerAuthNeeded) {
+	/*if (ownerAuthNeeded) {
 		if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cursorCmd, authHandle))) //7 authHandle
 		{
 			goto Cleanup;
@@ -4451,7 +4451,7 @@ nvReadVaule12(
 			goto Cleanup;
 		}
 		cursorCmd += SHA1_DIGEST_SIZE;
-	}
+	}*/
 	// Set the command size
 	ENDIANSWAP_UINT32TOARRAY(cursorCmd, cmd, 0x0002); // Location of paramSize
 
