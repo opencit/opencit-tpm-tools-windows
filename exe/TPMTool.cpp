@@ -32,6 +32,7 @@ PcpToolGetHelp(
     wprintf(L"Commands:\n");
     wprintf(L"\nGeneral:\n");
     wprintf(L" GetVersion\n");
+	wprintf(L" GetTpmVersion\n");
 
     wprintf(L"\nRNG:\n");
     wprintf(L" GetRandom [size] {seed data} {output file}\n");
@@ -128,6 +129,10 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolGetVersion(argc, argv);
         }
+		if (!_wcsicmp(command, L"gettpmversion"))
+		{
+			hr = PcpToolGetTpmVersion(argc, argv);
+		}
         else if(!_wcsicmp(command, L"getrandom"))
         {
             hr = PcpToolGetRandom(argc, argv);

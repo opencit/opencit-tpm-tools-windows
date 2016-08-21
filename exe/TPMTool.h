@@ -179,6 +179,12 @@ PcpToolGetVersion(
     );
 
 HRESULT
+PcpToolGetTpmVersion(
+	int argc,
+	_In_reads_(argc) WCHAR* argv[]
+	);
+
+HRESULT
 PcpToolGetEK(
     int argc,
     _In_reads_(argc) WCHAR* argv[]

@@ -625,6 +625,30 @@ Cleanup:
 }
 
 HRESULT
+PcpToolGetTpmVersion(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+/* Retrieve the TPM version- HX*/
+{
+	HRESULT hr = S_OK;
+	UINT32 tpmVersion = 0;
+
+	// Get TPM version to select implementation
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		wprintf(L"Get TPM version failed.\n");
+		return hr;
+	}
+
+	if (tpmVersion == TPM_VERSION_12)
+		wprintf(L"1.2");
+	else
+		wprintf(L"2.0");
+	return hr;
+}
+
+HRESULT
 PcpToolGetEK(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
