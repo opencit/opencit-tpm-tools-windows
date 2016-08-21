@@ -128,8 +128,7 @@ int __cdecl wmain(_In_ int argc,
         if(!_wcsicmp(command, L"getversion"))
         {
             hr = PcpToolGetVersion(argc, argv);
-        }
-		if (!_wcsicmp(command, L"gettpmversion"))
+        } else if(!_wcsicmp(command, L"gettpmversion"))
 		{
 			hr = PcpToolGetTpmVersion(argc, argv);
 		}
