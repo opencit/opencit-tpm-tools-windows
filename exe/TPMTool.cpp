@@ -62,6 +62,7 @@ PcpToolGetHelp(
     wprintf(L" CreateAIK [key name] {idBinding file} {nonce} {usageAuth | @ | ! }\n");
 	wprintf(L" ImportAIK [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
 	wprintf(L" CollateIdentityRequest [key name] [nonce | privCA] {usageAuth | @ | ! }\n");
+	wprintf(L" CollateIdentityRequest2 [key name] [nonce | privCA] {usageAuth | @ | ! }\n");
     wprintf(L" GetPubAIK [idBinding file] {key File}\n");
     wprintf(L" ChallengeAIK [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n");
     wprintf(L" ActivateAIK [key name] [Blob file]\n");
@@ -179,6 +180,10 @@ int __cdecl wmain(_In_ int argc,
 		else if (!_wcsicmp(command, L"collateidentityrequest"))
 		{
 			hr = PcpToolCollateIdentityRequest(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"collateidentityrequest2"))
+		{
+			hr = PcpToolCollateIdentityRequest2(argc, argv);
 		}
         else if(!_wcsicmp(command, L"createkey"))
         {

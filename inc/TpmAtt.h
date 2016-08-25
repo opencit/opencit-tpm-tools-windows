@@ -242,6 +242,14 @@ DllExport HRESULT TpmAttPubKeyFromIdBinding(
     _Out_ BCRYPT_KEY_HANDLE* phAikPub
     );
 
+DllExport HRESULT TpmAttAikNameFromIdBinding(
+	_In_reads_(cbIdBinding) PBYTE pbIdBinding,
+	UINT32 cbIdBinding,
+	_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pcbResult
+	);
+
 /// <summary>
 /// Generate Activation Blob from IDBinding, with a given secret. If a nonce is provided,
 /// it will be validated with the nonce in the IDBinding

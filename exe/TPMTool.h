@@ -257,6 +257,12 @@ _In_reads_(argc) WCHAR* argv[]
 );
 
 HRESULT
+PcpToolCollateIdentityRequest2(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolCreateKey(
     int argc,
     _In_reads_(argc) WCHAR* argv[]

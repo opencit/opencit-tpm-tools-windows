@@ -1289,6 +1289,73 @@ Cleanup:
 }
 
 HRESULT
+AikNameFromIdBinding20(
+_In_reads_(cbIdBinding) PBYTE pbIdBinding,
+UINT32 cbIdBinding,
+_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+UINT32 cbOutput,
+_Out_ PUINT32 pcbResult
+)
+{
+	HRESULT hr = S_OK;
+	UINT32 cursor = 0;
+	PBYTE pbAikPub = NULL;
+	UINT32 cbAikPub = 0;
+	LPCWSTR nameAlg = NULL;
+	PBYTE pbAikName = NULL;
+	UINT32 cbAikName = 0;
+
+
+	// Check the parameters
+	if ((pbIdBinding == NULL) ||
+		(cbIdBinding == 0) ||
+		(pbOutput == NULL) ||
+		(cbOutput == 0))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Locate the public AIK in the blob
+	if (FAILED(hr = ReadBigEndian2B(pbIdBinding, cbIdBinding, &cursor, (PUINT16)&cbAikPub, &pbAikPub)))
+	{
+		goto Cleanup;
+	}
+
+	// Calculate the AIK name
+	if (FAILED(hr = GetNameFromPublic(
+		pbAikPub,
+		cbAikPub,
+		&nameAlg,
+		NULL,
+		0,
+		&cbAikName)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbAikName, cbAikName)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = GetNameFromPublic(
+		pbAikPub,
+		cbAikPub,
+		&nameAlg,
+		pbAikName,
+		cbAikName,
+		&cbAikName)))
+	{
+		goto Cleanup;
+	}
+	memcpy_s(pbOutput, cbOutput, pbAikName, cbAikName);
+	*pcbResult = cbAikName;
+
+Cleanup:
+	ZeroAndFree((PVOID*)&pbAikName, cbAikName);
+	return hr;
+}
+
+HRESULT
 GenerateQuote20(
     TBS_HCONTEXT hPlatformTbsHandle,
     UINT32 hPlatformKeyHandle,

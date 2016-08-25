@@ -291,6 +291,15 @@ PubKeyFromIdBinding20(
     );
 
 HRESULT
+AikNameFromIdBinding20(
+_In_reads_(cbIdBinding) PBYTE pbIdBinding,
+UINT32 cbIdBinding,
+_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+UINT32 cbOutput,
+_Out_ PUINT32 pcbResult
+);
+
+HRESULT
 GenerateActivation20(
     BCRYPT_KEY_HANDLE hEkPub,
     _In_reads_(cbIdBinding) PBYTE pbIdBinding,

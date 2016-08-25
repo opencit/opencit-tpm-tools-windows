@@ -602,6 +602,47 @@ Cleanup:
     return hr;
 }
 
+DllExport HRESULT TpmAttAikNameFromIdBinding(
+	_In_reads_(cbIdBinding) PBYTE pbIdBinding,
+	UINT32 cbIdBinding,
+	_Out_writes_to_opt_(cbOutput, *pcbResult) PBYTE pbOutput,
+	UINT32 cbOutput,
+	_Out_ PUINT32 pcbResult
+	)
+{
+	HRESULT hr = S_OK;
+	const BYTE IdBindingTag12[] = { 0x01, 0x01, 0x00, 0x00 };
+	const BYTE IdBindingTag20[] = { 0x00, 0x01 };
+
+	// Identify if this is a 1.2 or 2.0 activation blob
+	if (memcmp(pbIdBinding, IdBindingTag12, sizeof(IdBindingTag12)) == 0)
+	{
+		*pcbResult = 0;
+		goto Cleanup;
+	}
+	else if (memcmp(&pbIdBinding[0x02], IdBindingTag20, sizeof(IdBindingTag20)) == 0)
+	{
+		if (FAILED(hr = AikNameFromIdBinding20(
+			pbIdBinding,
+			cbIdBinding,
+			pbOutput,
+			cbOutput,
+			pcbResult
+			)))
+		{
+			goto Cleanup;
+		}
+	}
+	else
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+Cleanup:
+	return hr;
+}
+
 /// <summary>
 /// Generate Activation Blob from IDBinding, with a given secret. If a nonce is provided,
 /// it will be validated with the nonce in the IDBinding
