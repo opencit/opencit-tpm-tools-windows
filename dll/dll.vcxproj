@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\InlineFn.h" />
+    <ClInclude Include="..\inc\tcg\tpm20\tpm20.h" />
     <ClInclude Include="..\inc\TpmAtt.h" />
     <ClInclude Include="AttestationApi.h" />
     <ClInclude Include="stdafx.h" />

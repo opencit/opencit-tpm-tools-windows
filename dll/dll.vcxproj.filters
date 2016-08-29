@@ -30,6 +30,9 @@
     <ClInclude Include="..\inc\TpmAtt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\inc\tcg\tpm20\tpm20.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

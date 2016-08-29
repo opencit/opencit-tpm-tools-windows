@@ -261,6 +261,7 @@ pcrExtend12(
 	_Out_ PBYTE pbNewDigest
 );
 // TPM20.cpp
+#include <tcg/tpm20/tpm20.h>
 
 HRESULT
 GetNameFromPublic(
@@ -395,6 +396,27 @@ WrapPlatformKey20(
     UINT32 cbOutput,
     _Out_ PUINT32 pcbResult
     );
+
+HRESULT NvDefineSpace20(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 authHandle, // TPM2 Authorization 
+	_In_reads_(authHandleKeySize) PCBYTE authHandleKey,
+	UINT32 authHandleKeySize,
+	UINT32 nvIndex,
+	DWORD nvIndexAttributes,
+	_Out_writes_to_(indexKeySize) PBYTE indexKey,
+	UINT32 indexKeySize,
+	UINT32 dataSize);
+
+HRESULT NvRead20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 authHandle,
+	_In_reads_(authKeySize) PCBYTE authKey,
+	UINT32 authKeySize,
+	UINT32 nvIndex,
+	UINT32 offset,
+	_Out_writes_to_(outBufSize) PBYTE outBuf,
+	UINT32 outBufSize)
 
 #if defined(__cplusplus)
 }

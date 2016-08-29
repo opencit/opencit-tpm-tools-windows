@@ -22,6 +22,8 @@ Abstract:
 --*/
 
 #include "stdafx.h"
+#include <tcg/tpm20/tpm20.h>
+#include <minwinbase.h>
 
 // Hard-coded policies
 const BYTE defaultUserPolicy[] = {0x8f, 0xcd, 0x21, 0x69, 0xab, 0x92, 0x69, 0x4e,
@@ -3594,3 +3596,288 @@ Cleanup:
     return hr;
 }
 
+void PrepareAuth(TPMS_AUTH_COMMAND * inSession, UINT16 authKeySize, PCBYTE authKey)
+{
+	inSession->sessionHandle = ENDIANSWAPUINT32(TPM_RS_PW);
+	inSession->sessionAttributes = 0;
+	inSession->nonce.t.size = 0;
+
+	if(memcpy_s(inSession->hmac.t.buffer, sizeof(inSession->hmac.t.buffer), authKey, authKeySize))
+	{
+		inSession->hmac.t.size = 0;
+	}
+	else
+	{
+		inSession->hmac.t.size = ENDIANSWAPUINT16(authKeySize);
+	}
+}
+
+/*
+ * I don't care what you think about hungarian notation, I'm simply not going to use it.
+ */
+HRESULT NvDefineSpace20(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	TPM_RH authHandle, // TPM2 Authorization 
+	_In_reads_(authHandleKeySize) PCBYTE authHandleKey,
+	UINT32 authHandleKeySize,
+	UINT32 nvIndex,
+	DWORD nvIndexAttributes,
+	_In_reads_(indexKeySize) PBYTE indexKey,
+	UINT32 indexKeySize,
+	UINT16 dataSize)
+{
+	HRESULT hr = S_OK;
+
+	struct TPM2_NV_DEFINE_SPACE_IN
+	{
+		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
+		UINT32 commandSize;
+		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_DefineSpace);
+		/*---------------------------------------------*/
+		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
+		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+		UINT32 sessionSize;
+		TPMS_AUTH_COMMAND sessionCommand;
+		/*=============================================*/
+		TPM2B_AUTH auth;
+		TPM2B_NV_PUBLIC publicInfo;
+	} commandBuffer = { 0 };
+
+	struct TPM2_NV_DEFINE_SPACE_OUT
+	{
+		TPM_ST tag;
+		UINT32 responseSize;
+		TPM_RC responseCode;
+	} responseBuffer = { 0 };	
+
+	commandBuffer.commandSize = ENDIANSWAPUINT32(sizeof(commandBuffer));
+	memcpy_s(&commandBuffer.auth, sizeof(commandBuffer.auth), indexKey, indexKeySize);
+
+	TPM2B_NV_PUBLIC *publicInfo = &commandBuffer.publicInfo;
+	
+	publicInfo->t.size = ENDIANSWAPUINT16(sizeof(commandBuffer.publicInfo));
+	publicInfo->t.nvPublic.nvIndex = ENDIANSWAPUINT32(nvIndex);
+	publicInfo->t.nvPublic.nameAlg = ENDIANSWAPUINT16(TPM_ALG_SHA256);
+
+	publicInfo->t.nvPublic.attributes = ENDIANSWAPUINT32(nvIndexAttributes);
+	publicInfo->t.nvPublic.authPolicy.t.size = 0;
+	publicInfo->t.nvPublic.dataSize = ENDIANSWAPUINT16(dataSize);
+
+	TPMS_AUTH_COMMAND * authCmd = &commandBuffer.sessionCommand;
+	PrepareAuth(authCmd, authHandleKeySize, authHandleKey);
+
+	UINT32 respSize = sizeof(responseBuffer);
+
+	TBS_RESULT res = Tbsip_Submit_Command(hPlatformTbsHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
+		reinterpret_cast<PCBYTE>(&commandBuffer), sizeof(commandBuffer), reinterpret_cast<PBYTE>(&responseBuffer), &respSize);
+
+	if(res == TBS_SUCCESS)
+	{
+		if(responseBuffer.responseCode != 0)
+		{
+			return E_FAIL;
+		} else
+		{
+			return S_OK;
+		}
+	} 
+	else
+	{
+		return (HRESULT)res;
+	}
+}
+
+HRESULT NvWrite20(
+	TBS_HCONTEXT hPlatformContextHandle, 
+	UINT32 authHandle,
+	_In_reads_(authHandleKeySize) PCBYTE authHandleKey,
+	UINT32 authHandleKeySize,
+	UINT32 nvIndex,
+	UINT16 offset,
+	_In_reads_(inBufferSize) PBYTE inBuffer,
+	UINT32 inBufferSize
+	)
+{
+	if(authHandleKey == nullptr || inBuffer == nullptr)
+	{
+		return E_FAIL;
+	}
+
+	struct TPM2_NV_WRITE_IN
+	{
+		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
+		UINT32 commandSize;
+		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Write);
+		/*---------------------------------------------*/
+		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
+		TPMI_RH_NV_INDEX nvIndex;
+		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+		UINT32 sessionSize;
+		TPMS_AUTH_COMMAND sessionCommand;
+		/*=============================================*/
+		TPM2B_MAX_NV_BUFFER data;
+		UINT16 offset;
+	} cmd;
+
+	struct TPM2_NV_WRITE_OUT
+	{
+		TPM_ST tag;
+		UINT32 responseSize;
+		TPM_RC responseCode;
+	} rsp;
+
+	cmd.commandSize = ENDIANSWAPUINT32(sizeof(cmd));
+
+	cmd.sessionSize = sizeof(cmd.sessionCommand);
+
+	TPMS_AUTH_COMMAND *authCmd = &cmd.sessionCommand;
+
+	cmd.nvIndex = ENDIANSWAPUINT32(nvIndex);
+
+	if(memcpy_s(cmd.data.t.buffer, sizeof(cmd.data.t.buffer), inBuffer, inBufferSize))
+	{
+		return E_FAIL;
+	}
+	
+	cmd.offset = ENDIANSWAPUINT16(offset);
+
+	PrepareAuth(authCmd, authHandleKeySize, authHandleKey);
+	UINT32 rspSize = sizeof(rsp);
+
+	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
+		reinterpret_cast<PCBYTE>(&cmd), sizeof(cmd), reinterpret_cast<PBYTE>(&rsp), &rspSize);
+
+	if(res == TBS_SUCCESS)
+	{
+		if(rsp.responseCode != 0)
+		{
+			return E_FAIL;
+		}
+		else
+		{
+			return S_OK;
+		}
+	}
+	else
+	{
+		return (HRESULT)res;
+	}
+}
+
+HRESULT NvRead20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 authHandle,
+	_In_reads_(authKeySize) PCBYTE authKey,
+	UINT32 authKeySize,
+	UINT32 nvIndex,
+	UINT32 offset,
+	_Out_writes_to_(outBufSize) PBYTE outBuf,
+	UINT32 outBufSize,
+	_Out_ PUINT32 actualDataSize)
+{
+	if (authKey == nullptr || outBuf == nullptr)
+		return E_FAIL;
+
+	struct TPM2_NV_READ_IN
+	{
+		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
+		UINT32 commandSize;
+		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Read);
+		/*---------------------------------------------*/
+		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
+		TPMI_RH_NV_INDEX index;
+		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+		UINT32 sessionSize;
+		TPMS_AUTH_COMMAND sessionCommand;
+		/*=============================================*/
+		UINT16 size;
+		UINT16 offset;
+	} cmd;
+
+	struct TPM2_NV_READ_OUT
+	{
+		TPM_ST tag;
+		UINT32 responseSize;
+		TPM_RC responseCode;
+		/*=================*/
+		TPM2B_MAX_NV_BUFFER data;
+	} rsp;
+
+	UINT32 rspSize = sizeof(rsp);
+
+	cmd.commandSize = ENDIANSWAPUINT32(sizeof(cmd));
+	
+	cmd.index = ENDIANSWAPUINT32(nvIndex);
+
+	PrepareAuth(&cmd.sessionCommand, authKeySize, authKey);
+
+	cmd.sessionSize = sizeof(cmd.sessionCommand);
+
+	cmd.size = ENDIANSWAPUINT16(outBufSize);
+	cmd.offset = ENDIANSWAPUINT16(offset);
+
+	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
+		reinterpret_cast<PCBYTE>(&cmd), sizeof(cmd), reinterpret_cast<PBYTE>(&rsp), &rspSize);
+	// add the size
+	if(res == TBS_SUCCESS)
+	{
+		if(rsp.responseCode != 0)
+		{
+			return E_FAIL;
+		} else
+		{
+			UINT16 actualSz = ENDIANSWAPUINT16(rsp.data.t.size);
+			if (actualDataSize)
+				*actualDataSize = actualSz;
+			return (HRESULT)memcpy_s(outBuf, outBufSize, rsp.data.t.buffer, actualSz);
+		}		
+	}
+	else
+	{
+		return (HRESULT)res;
+	}
+}
+
+
+HRESULT NvRelease20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	_In_reads_(authKeySize) PCBYTE authKey,
+	UINT32 authKeySize,
+	UINT32 nvIndex
+	)
+{
+	struct TPM2_NV_UNDEFINE_IN
+	{
+		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
+		UINT32 commandSize;
+		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Read);
+		/*---------------------------------------------*/
+		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
+		TPMI_RH_NV_INDEX index;
+		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+		UINT32 sessionSize;
+		TPMS_AUTH_COMMAND sessionCommand;
+		/*=============================================*/
+	} cmd;
+
+	cmd.commandSize = sizeof(cmd);
+	cmd.index = ENDIANSWAPUINT32(nvIndex);
+
+	PrepareAuth(&cmd.sessionCommand, authKeySize, authKey);
+
+	cmd.sessionSize = ENDIANSWAPUINT32(sizeof(cmd.sessionCommand));
+
+	struct TPM2_NV_UNDEFINE_OUT
+	{
+		TPM_ST tag;
+		UINT32 responseSize;
+		TPM_RC responseCode;
+	} rsp;
+
+	UINT32 rspSize = sizeof(rsp);
+
+	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
+		reinterpret_cast<PCBYTE>(&cmd), sizeof(cmd), reinterpret_cast<PBYTE>(&rsp), &rspSize);
+
+	return (HRESULT)res;
+}

@@ -38,10 +38,10 @@
     <ClCompile Include="SDKSample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Support.cpp">
+    <ClCompile Include="TPMTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TPMTool.cpp">
+    <ClCompile Include="Support.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
