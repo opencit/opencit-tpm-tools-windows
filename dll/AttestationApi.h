@@ -399,14 +399,14 @@ WrapPlatformKey20(
 
 HRESULT NvDefineSpace20(
 	TBS_HCONTEXT hPlatformTbsHandle,
-	UINT32 authHandle, // TPM2 Authorization 
+	TPM_RH authHandle, // TPM2 Authorization 
 	_In_reads_(authHandleKeySize) PCBYTE authHandleKey,
 	UINT32 authHandleKeySize,
 	UINT32 nvIndex,
 	DWORD nvIndexAttributes,
-	_Out_writes_to_(indexKeySize) PBYTE indexKey,
+	_In_reads_(indexKeySize) PBYTE indexKey,
 	UINT32 indexKeySize,
-	UINT32 dataSize);
+	UINT16 dataSize);
 
 HRESULT NvRead20(
 	TBS_HCONTEXT hPlatformContextHandle,
@@ -416,7 +416,24 @@ HRESULT NvRead20(
 	UINT32 nvIndex,
 	UINT32 offset,
 	_Out_writes_to_(outBufSize) PBYTE outBuf,
-	UINT32 outBufSize)
+	UINT32 outBufSize,
+	_Out_ PUINT32 actualDataSize);
+
+HRESULT NvWrite20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 authHandle,
+	_In_reads_(authHandleKeySize) PCBYTE authHandleKey,
+	UINT32 authHandleKeySize,
+	UINT32 nvIndex,
+	UINT16 offset,
+	_In_reads_(inBufferSize) PBYTE inBuffer,
+	UINT32 inBufferSize);
+
+HRESULT NvRelease20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	_In_reads_(authKeySize) PCBYTE authKey,
+	UINT32 authKeySize,
+	UINT32 nvIndex);
 
 #if defined(__cplusplus)
 }

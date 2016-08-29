@@ -9316,7 +9316,7 @@ HRESULT PcpToolNVDefine(
 	wprintf(L"\n");
 	*/
 
-	hr = TpmNVDefineSpace(nvIndex, nvIndexSize, (PBYTE)&nvAuthDigest[0], permissions);
+	hr = TpmNVDefineSpace(nvIndex, nvIndexSize, (PBYTE)&nvAuthDigest[0], sizeof(nvAuthDigest), permissions);
 	if (hr != S_OK) {
 		wprintf(L"tpm nv_define failed with return code %lu\n", hr);
 	}
@@ -9364,8 +9364,7 @@ HRESULT PcpToolNVRelease(
 		goto Cleanup;
 	}
 
-	/* call the same function TPMNVDefineSpace but with size 0 to release the NVindex */
-	hr = TpmNVDefineSpace(nvIndex, 0, (PBYTE)&nvAuthDigest[0], permissions);
+	hr = TpmNVReleaseSpace(nvIndex, nvAuthDigest, sizeof(nvAuthDigest)); 
 	if (hr != S_OK) {
 		wprintf(L"tpm nvrelease failed with return code lu\n", hr);
 	}

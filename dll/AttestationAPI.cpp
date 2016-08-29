@@ -3428,12 +3428,7 @@ DllExport HRESULT TpmNVInfo(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//Not implemented yet
-		DWORD attr = TPMA_NV_TPMA_NV_AUTHWRITE;
-		if(FAILED(hr = NvDefineSpace20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, attr, pbOwnerAuth, cbOwnerAuth, indexSize)))
-		{
-			goto Cleanup;
-		}
+		//Not implemented yet		
 	}
 	else
 	{
@@ -3451,10 +3446,69 @@ Cleanup:
 	return hr;
 }
 
+DllExport HRESULT TpmNVReleaseSpace(
+	UINT32 nvIndex,
+	PBYTE nvAuth,
+	UINT32 nvAuthSize)
+{
+	HRESULT hr = 0;
+	TBS_CONTEXT_PARAMS2 contextParams;
+	TBS_HCONTEXT hPlatformTbsHandle = 0;
+	UINT32 tpmVersion;
+	BYTE pbOwnerAuth[256] = { 0 };
+	UINT32 cbOwnerAuth = sizeof(pbOwnerAuth);
+
+	// Get TPM version to select implementation
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		goto Cleanup;
+	}
+
+	contextParams.version = TBS_CONTEXT_VERSION_TWO;
+	contextParams.asUINT32 = 0;
+	contextParams.includeTpm12 = 1;
+	contextParams.includeTpm20 = 1;
+	if (FAILED(hr = Tbsi_Context_Create((PCTBS_CONTEXT_PARAMS)&contextParams, &hPlatformTbsHandle)))
+	{
+		goto Cleanup;
+	}
+
+	// get ownerAuth
+	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_FULL, pbOwnerAuth, &cbOwnerAuth)))
+	{
+		goto Cleanup;
+	}
+
+	if (tpmVersion == TPM_VERSION_12)
+	{
+		if (FAILED(hr = TpmNVDefineSpace(nvIndex, 0, pbOwnerAuth, nvAuthSize, NULL)))
+		{
+			goto Cleanup;
+		}
+	}
+	else if (tpmVersion == TPM_VERSION_20)
+	{
+		if (FAILED(hr = NvRelease20(hPlatformTbsHandle, nvAuth, nvAuthSize, nvIndex)))
+		{
+			goto Cleanup;
+		}
+	}
+	else
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+
+Cleanup:
+	Tbsip_Context_Close(hPlatformTbsHandle);
+	return hr;
+}
+
 DllExport HRESULT TpmNVDefineSpace(
 	UINT32 nvIndex,
 	UINT32 indexSize,
-	PBYTE nvAuth, 
+	PBYTE nvAuth,
+	UINT32 nvAuthSize,
 	PCWSTR permissions
 	) 
 {
@@ -3501,7 +3555,7 @@ DllExport HRESULT TpmNVDefineSpace(
 
 	if (tpmVersion == TPM_VERSION_12)
 	{
-		if (FAILED(hr = NvDefineSpace12(hPlatformTbsHandle, nvIndex, indexSize, pbOwnerAuth, cbOwnerAuth, nvAuth, 20, TPM_NV_PER_AUTHWRITE)))
+		if (FAILED(hr = NvDefineSpace12(hPlatformTbsHandle, nvIndex, indexSize, pbOwnerAuth, cbOwnerAuth, nvAuth, nvAuthSize, TPM_NV_PER_AUTHWRITE)))
 		{
 			goto Cleanup;
 		}
@@ -3509,8 +3563,11 @@ DllExport HRESULT TpmNVDefineSpace(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//Not implemented yet
-		hr = NvRead20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, 0, pbData, cbData);
+		DWORD attr = TPMA_NV_TPMA_NV_AUTHWRITE;
+		if (FAILED(hr = NvDefineSpace20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, attr, nvAuth, nvAuthSize, indexSize)))
+		{
+			goto Cleanup;
+		}
 	}
 	else
 	{
@@ -3571,8 +3628,10 @@ DllExport HRESULT TpmNVReadValue(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//Not implemented yet
-		
+		if(FAILED(hr = NvRead20(hPlatformTbsHandle, nvIndex, pbOwnerAuth, cbOwnerAuth, nvIndex, 0, pbData, cbData, pcbResult)))
+		{
+			goto Cleanup;
+		}
 	}
 	else
 	{
@@ -3628,7 +3687,10 @@ DllExport HRESULT TpmNVWriteValueAuth(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//Not implemented yet
+		if(FAILED(hr = NvWrite20(hPlatformTbsHandle, nvIndex, nvAuth, cbNvAuth, nvIndex, 0, pbData, cbData)))
+		{
+			goto Cleanup;
+		}
 	}
 	else
 	{

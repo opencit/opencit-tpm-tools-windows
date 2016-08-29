@@ -3613,7 +3613,7 @@ void PrepareAuth(TPMS_AUTH_COMMAND * inSession, UINT16 authKeySize, PCBYTE authK
 }
 
 /*
- * I don't care what you think about hungarian notation, I'm simply not going to use it.
+ * TPM 2.0 NV Commands
  */
 HRESULT NvDefineSpace20(
 	TBS_HCONTEXT hPlatformTbsHandle,
@@ -3641,7 +3641,7 @@ HRESULT NvDefineSpace20(
 		/*=============================================*/
 		TPM2B_AUTH auth;
 		TPM2B_NV_PUBLIC publicInfo;
-	} commandBuffer = { 0 };
+	} commandBuffer = {};
 
 	struct TPM2_NV_DEFINE_SPACE_OUT
 	{
@@ -3709,7 +3709,7 @@ HRESULT NvWrite20(
 		UINT32 commandSize;
 		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Write);
 		/*---------------------------------------------*/
-		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
+		TPMI_RH_NV_AUTH /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
 		TPMI_RH_NV_INDEX nvIndex;
 		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 		UINT32 sessionSize;
@@ -3731,6 +3731,7 @@ HRESULT NvWrite20(
 	cmd.sessionSize = sizeof(cmd.sessionCommand);
 
 	TPMS_AUTH_COMMAND *authCmd = &cmd.sessionCommand;
+	
 
 	cmd.nvIndex = ENDIANSWAPUINT32(nvIndex);
 
@@ -3740,7 +3741,7 @@ HRESULT NvWrite20(
 	}
 	
 	cmd.offset = ENDIANSWAPUINT16(offset);
-
+	
 	PrepareAuth(authCmd, authHandleKeySize, authHandleKey);
 	UINT32 rspSize = sizeof(rsp);
 
@@ -3838,6 +3839,59 @@ HRESULT NvRead20(
 	}
 }
 
+HRESULT NvInfo20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 nvIndex,
+	_Out_writes_to_ (nvPublicSize) PBYTE nvPublic,
+	UINT32 nvPublicSize
+	)
+{
+	struct TPM2_NV_READPUBLIC_IN
+	{
+		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_NO_SESSIONS);
+		UINT32 commandSize;
+		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_ReadPublic);
+		TPMI_RH_NV_INDEX nvIndex = ENDIANSWAPUINT32(nvIndex);
+	} cmd;
+
+	cmd.commandSize = ENDIANSWAPUINT32(sizeof(cmd));
+
+	struct TPM2_NV_READPUBLIC_OUT
+	{
+		TPM_ST tag;
+		UINT32 responseSize;
+		TPM_RC responseCode;
+		/*=================*/
+		TPM2B_NV_PUBLIC nvPublic;
+		TPM2B_NAME nvName;
+	} rsp;
+	UINT32 rspSize = sizeof(rsp);
+	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL, (PCBYTE)&cmd, sizeof(cmd), (PBYTE)&rsp, &rspSize);
+
+	if(res == TBS_SUCCESS)
+	{
+		if(rsp.responseCode != 0)
+		{
+			return E_FAIL;
+		} 
+		else
+		{
+			UINT16 sz = ENDIANSWAPUINT16(rsp.nvPublic.b.size);
+			if(!memcpy_s(nvPublic, nvPublicSize, rsp.nvPublic.b.buffer, sz))
+			{
+				return S_OK;
+			}
+			else
+			{
+				return E_FAIL;
+			}
+		}
+	}
+	else
+	{
+		return (HRESULT)res;
+	}
+}
 
 HRESULT NvRelease20(
 	TBS_HCONTEXT hPlatformContextHandle,
