@@ -3484,7 +3484,7 @@ DllExport HRESULT TpmNVReleaseSpace(
 		if (FAILED(hr = TpmNVDefineSpace(nvIndex, 0, pbOwnerAuth, nvAuthSize, NULL)))
 		{
 			goto Cleanup;
-		}
+	}	
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
@@ -3563,7 +3563,7 @@ DllExport HRESULT TpmNVDefineSpace(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		DWORD attr = TPMA_NV_TPMA_NV_AUTHWRITE;
+		DWORD attr = 0x02040002;
 		if (FAILED(hr = NvDefineSpace20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, attr, nvAuth, nvAuthSize, indexSize)))
 		{
 			goto Cleanup;

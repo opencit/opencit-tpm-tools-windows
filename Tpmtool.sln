@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PCPTool", "exe\exe.vcxproj", "{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TPMTool", "exe\exe.vcxproj", "{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348} = {6CE39D5D-FCAE-4EB1-8682-052AF175E348}
 	EndProjectSection
@@ -21,6 +21,8 @@ Global
 		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Debug|Win32.ActiveCfg = Debug|x64
 		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Debug|Win32.Build.0 = Debug|x64
 		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Debug|x64.ActiveCfg = Debug|x64
+		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Debug|x64.Build.0 = Debug|x64
+		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Debug|x64.Deploy.0 = Debug|x64
 		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Release|Win32.ActiveCfg = Release|Win32
 		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Release|Win32.Build.0 = Release|Win32
 		{CB00F5C2-29EB-4570-AE4D-2C3B23C74FE2}.Release|x64.ActiveCfg = Release|x64
@@ -29,6 +31,7 @@ Global
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Debug|Win32.ActiveCfg = Debug|x64
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Debug|Win32.Build.0 = Debug|x64
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Debug|x64.ActiveCfg = Debug|x64
+		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Debug|x64.Build.0 = Debug|x64
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Release|Win32.ActiveCfg = Release|Win32
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Release|Win32.Build.0 = Release|Win32
 		{6CE39D5D-FCAE-4EB1-8682-052AF175E348}.Release|x64.ActiveCfg = Release|x64

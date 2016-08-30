@@ -401,11 +401,11 @@ HRESULT NvDefineSpace20(
 	TBS_HCONTEXT hPlatformTbsHandle,
 	TPM_RH authHandle, // TPM2 Authorization 
 	_In_reads_(authHandleKeySize) PCBYTE authHandleKey,
-	UINT32 authHandleKeySize,
+	UINT16 authHandleKeySize,
 	UINT32 nvIndex,
 	DWORD nvIndexAttributes,
 	_In_reads_(indexKeySize) PBYTE indexKey,
-	UINT32 indexKeySize,
+	UINT16 indexKeySize,
 	UINT16 dataSize);
 
 HRESULT NvRead20(
