@@ -3724,6 +3724,16 @@ HRESULT NvDefineSpace20(
 		return hr;
 	}
 
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cmdCursor, publicInfo.t.nvPublic.nvIndex)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cmdCursor, publicInfo.t.nvPublic.nameAlg)))
+	{
+		return hr;
+	}
+
 	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cmdCursor, publicInfo.t.nvPublic.attributes)))
 	{
 		return hr;
@@ -3735,16 +3745,6 @@ HRESULT NvDefineSpace20(
 	}
 
 	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cmdCursor, publicInfo.t.nvPublic.dataSize)))
-	{
-		return hr;
-	}
-
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cmdCursor, publicInfo.t.nvPublic.nameAlg)))
-	{
-		return hr;
-	}
-
-	if (FAILED(hr = WriteBigEndian(cmd, sizeof(cmd), &cmdCursor, publicInfo.t.nvPublic.nvIndex)))
 	{
 		return hr;
 	}
