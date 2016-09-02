@@ -104,7 +104,7 @@ PcpToolGetHelp(
 	wprintf(L" NVDefine [index] [size] [nvramPassword] {permissions}\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
 	wprintf(L" NVRelease [index]\n");
 	wprintf(L" NVWrite [nvIndex] [nvramPassword] [data in hex]\n");
-	wprintf(L" NVRead [nvIndex]\n");
+	wprintf(L" NVRead [nvIndex] [nvramPassword]\n");
 	wprintf(L" PCRextend [pcrIndex] [newDigest]\n");
 
 }

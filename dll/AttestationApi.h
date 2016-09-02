@@ -415,7 +415,7 @@ HRESULT NvRead20(
 	UINT32 authKeySize,
 	UINT32 nvIndex,
 	UINT32 offset,
-	_Out_writes_to_(outBufSize) PBYTE outBuf,
+	_Out_writes_to_opt_(outBufSize) PBYTE outBuf,
 	UINT32 outBufSize,
 	_Out_ PUINT32 actualDataSize);
 
@@ -431,9 +431,18 @@ HRESULT NvWrite20(
 
 HRESULT NvRelease20(
 	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 authHandle,
 	_In_reads_(authKeySize) PCBYTE authKey,
 	UINT32 authKeySize,
-	UINT32 nvIndex);
+	UINT32 nvIndex
+);
+
+HRESULT NvInfo20(
+	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 nvIndex,
+	_Out_writes_to_opt_(nvPublicSize) PBYTE nvPublic,
+	UINT32 nvPublicSize
+);
 
 #if defined(__cplusplus)
 }

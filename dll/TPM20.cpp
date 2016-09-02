@@ -3714,7 +3714,7 @@ HRESULT NvDefineSpace20(
 	publicInfo.t.nvPublic.attributes = nvIndexAttributes;
 	publicInfo.t.nvPublic.authPolicy.t.size = 0;
 	publicInfo.t.nvPublic.dataSize = dataSize;
-	publicInfo.t.nvPublic.nameAlg = TPM_ALG_SHA1;
+	publicInfo.t.nvPublic.nameAlg = TPM_ALG_SHA256;
 	publicInfo.t.nvPublic.nvIndex = nvIndex;
 	publicInfo.t.size = sizeof(publicInfo.t.nvPublic.attributes) + sizeof(publicInfo.t.nvPublic.authPolicy.t.size) +
 		sizeof(publicInfo.t.nvPublic.dataSize) + sizeof(publicInfo.t.nvPublic.nameAlg) + sizeof(publicInfo.t.nvPublic.nvIndex);
@@ -3805,54 +3805,113 @@ HRESULT NvWrite20(
 		return E_FAIL;
 	}
 
-	struct TPM2_NV_WRITE_IN
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	UINT32 cmdSize = sizeof(cmd);
+	UINT32 rspSize = sizeof(rsp);
+	UINT32 cmdCursor = 0;
+	HRESULT hr = S_OK;
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPMI_ST_COMMAND_TAG(TPM_ST_SESSIONS))))
 	{
-		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
-		UINT32 commandSize;
-		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Write);
-		/*---------------------------------------------*/
-		TPMI_RH_NV_AUTH /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
-		TPMI_RH_NV_INDEX nvIndex;
-		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-		UINT32 sessionSize;
-		TPMS_AUTH_COMMAND sessionCommand;
-		/*=============================================*/
-		TPM2B_MAX_NV_BUFFER data;
-		UINT16 offset;
-	} cmd;
+		return hr;
+	}
 
-	struct TPM2_NV_WRITE_OUT
+	UINT32 sizeOffset = cmdCursor;
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(0x00000000))))
 	{
-		TPM_ST tag;
-		UINT32 responseSize;
-		TPM_RC responseCode;
-	} rsp;
+		return hr;
+	}
 
-	cmd.commandSize = ENDIANSWAPUINT32(sizeof(cmd));
-
-	cmd.sessionSize = sizeof(cmd.sessionCommand);
-
-	TPMS_AUTH_COMMAND *authCmd = &cmd.sessionCommand;
-	
-
-	cmd.nvIndex = ENDIANSWAPUINT32(nvIndex);
-
-	if(memcpy_s(cmd.data.t.buffer, sizeof(cmd.data.t.buffer), inBuffer, inBufferSize))
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPM_CC(TPM_CC_NV_Write))))
 	{
-		return E_FAIL;
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, authHandle)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, nvIndex)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(sizeof(UINT32) + // sessionHandle
+		sizeof(UINT16) + // nonceSize
+		sizeof(BYTE) + // session attributes
+		sizeof(UINT16) + // authSize
+		authHandleKeySize))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(TPM_RS_PW))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT16(0x0000))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, BYTE(0x00))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT16)authHandleKeySize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (PBYTE)authHandleKey, authHandleKeySize)))
+	{
+		return hr;
 	}
 	
-	cmd.offset = ENDIANSWAPUINT16(offset);
-	
-	PrepareAuth(authCmd, authHandleKeySize, authHandleKey);
-	UINT32 rspSize = sizeof(rsp);
+	// Write TPM2B_NV_BUFFER
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT16)inBufferSize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (PBYTE)inBuffer, inBufferSize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, offset)))
+	{
+		return hr;
+	}
+
+	// Write the actual calculated size
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &sizeOffset, cmdCursor)))
+	{
+		return hr;
+	}
+
+
 
 	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
-		reinterpret_cast<PCBYTE>(&cmd), sizeof(cmd), reinterpret_cast<PBYTE>(&rsp), &rspSize);
+		reinterpret_cast<PCBYTE>(&cmd), cmdCursor, reinterpret_cast<PBYTE>(&rsp), &rspSize);
 
 	if(res == TBS_SUCCESS)
 	{
-		if(rsp.responseCode != 0)
+#pragma pack(1)
+		struct TPM2_NV_WRITE_OUT
+		{
+			TPM_ST tag;
+			UINT32 responseSize;
+			TPM_RC responseCode;
+		} *rspStruct = (TPM2_NV_WRITE_OUT*)rsp;
+		UINT32 responseCode = ENDIANSWAPUINT32(rspStruct->responseCode);
+
+		if(responseCode != 0)
 		{
 			return E_FAIL;
 		}
@@ -3874,65 +3933,135 @@ HRESULT NvRead20(
 	UINT32 authKeySize,
 	UINT32 nvIndex,
 	UINT32 offset,
-	_Out_writes_to_(outBufSize) PBYTE outBuf,
-	UINT32 outBufSize,
+	_Out_writes_to_opt_(outputSize) PBYTE output,
+	UINT32 outputSize,
 	_Out_ PUINT32 actualDataSize)
 {
-	if (authKey == nullptr || outBuf == nullptr)
+	if (authKey == nullptr || output == nullptr)
 		return E_FAIL;
 
-	struct TPM2_NV_READ_IN
-	{
-		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
-		UINT32 commandSize;
-		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Read);
-		/*---------------------------------------------*/
-		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
-		TPMI_RH_NV_INDEX index;
-		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-		UINT32 sessionSize;
-		TPMS_AUTH_COMMAND sessionCommand;
-		/*=============================================*/
-		UINT16 size;
-		UINT16 offset;
-	} cmd;
-
-	struct TPM2_NV_READ_OUT
-	{
-		TPM_ST tag;
-		UINT32 responseSize;
-		TPM_RC responseCode;
-		/*=================*/
-		TPM2B_MAX_NV_BUFFER data;
-	} rsp;
-
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	UINT32 cmdSize = sizeof(cmd);
 	UINT32 rspSize = sizeof(rsp);
+	UINT32 cmdCursor = 0;
+	HRESULT hr = S_OK;
 
-	cmd.commandSize = ENDIANSWAPUINT32(sizeof(cmd));
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPMI_ST_COMMAND_TAG(TPM_ST_SESSIONS))))
+	{
+		return hr;
+	}
+
+	UINT32 sizeOffset = cmdCursor;
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(0x00000000))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPM_CC(TPM_CC_NV_Read))))
+	{
+		return hr;
+	}
 	
-	cmd.index = ENDIANSWAPUINT32(nvIndex);
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, authHandle)))
+	{
+		return hr;
+	}
 
-	PrepareAuth(&cmd.sessionCommand, authKeySize, authKey);
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, nvIndex)))
+	{
+		return hr;
+	}
 
-	cmd.sessionSize = sizeof(cmd.sessionCommand);
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT32)(
+		sizeof(UINT32) + // sessionHandle
+		sizeof(UINT16) + // nonce
+		sizeof(BYTE) + // attributes
+		sizeof(UINT16) + // keySize
+		authKeySize))))
+	{
+		return hr;
+	}
 
-	cmd.size = ENDIANSWAPUINT16(outBufSize);
-	cmd.offset = ENDIANSWAPUINT16(offset);
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(TPM_RS_PW))))
+	{
+		return hr;
+	}
 
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT16(0x0000))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, BYTE(0x00))))
+	{
+		return hr; 
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT16)authKeySize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (PBYTE)authKey, authKeySize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT16)outputSize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT16)offset)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &sizeOffset, cmdCursor)))
+	{
+		return hr;
+	}	
+	
 	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
-		reinterpret_cast<PCBYTE>(&cmd), sizeof(cmd), reinterpret_cast<PBYTE>(&rsp), &rspSize);
+		reinterpret_cast<PCBYTE>(&cmd), cmdCursor, reinterpret_cast<PBYTE>(&rsp), &rspSize);
 	// add the size
+
 	if(res == TBS_SUCCESS)
 	{
-		if(rsp.responseCode != 0)
+#pragma pack(1)
+		struct TPM2_NV_READ_OUT
+		{
+			TPM_ST tag;
+			UINT32 responseSize;
+			TPM_RC responseCode;
+			/*=================*/
+#pragma pack(1)
+			struct TPM2_NV_DATA
+			{
+				UINT32 size;
+				UINT16 dataSize;
+				BYTE buffer[1];
+			} data;
+		} *rspStruct = (TPM2_NV_READ_OUT*)rsp;
+		UINT32 responseCode = ENDIANSWAPUINT32(rspStruct->responseCode);
+		if(responseCode != 0)
 		{
 			return E_FAIL;
 		} else
 		{
-			UINT16 actualSz = ENDIANSWAPUINT16(rsp.data.t.size);
+			UINT16 actualSz = ENDIANSWAPUINT16(rspStruct->data.dataSize);
 			if (actualDataSize)
 				*actualDataSize = actualSz;
-			return (HRESULT)memcpy_s(outBuf, outBufSize, rsp.data.t.buffer, actualSz);
+			if (!memcpy_s(output, outputSize, rspStruct->data.buffer, actualSz))
+			{
+				return S_OK;
+			}
+			else
+			{
+				return E_FAIL;
+			}
 		}		
 	}
 	else
@@ -3944,42 +4073,65 @@ HRESULT NvRead20(
 HRESULT NvInfo20(
 	TBS_HCONTEXT hPlatformContextHandle,
 	UINT32 nvIndex,
-	_Out_writes_to_ (nvPublicSize) PBYTE nvPublic,
+	_Out_writes_to_opt_ (nvPublicSize) PBYTE nvPublic,
 	UINT32 nvPublicSize
 	)
 {
-	struct TPM2_NV_READPUBLIC_IN
-	{
-		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_NO_SESSIONS);
-		UINT32 commandSize;
-		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_ReadPublic);
-		TPMI_RH_NV_INDEX nvIndex = ENDIANSWAPUINT32(nvIndex);
-	} cmd;
-
-	cmd.commandSize = ENDIANSWAPUINT32(sizeof(cmd));
-
-	struct TPM2_NV_READPUBLIC_OUT
-	{
-		TPM_ST tag;
-		UINT32 responseSize;
-		TPM_RC responseCode;
-		/*=================*/
-		TPM2B_NV_PUBLIC nvPublic;
-		TPM2B_NAME nvName;
-	} rsp;
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	UINT32 cmdSize = sizeof(cmd);
 	UINT32 rspSize = sizeof(rsp);
+	UINT32 cmdCursor = 0;
+	HRESULT hr = S_OK;
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPMI_ST_COMMAND_TAG(TPM_ST_NO_SESSIONS))))
+	{
+		return hr;
+	}
+
+	UINT32 sizeOffset = cmdCursor;
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(0x00000000))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPM_CC(TPM_CC_NV_ReadPublic))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, nvIndex)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &sizeOffset, cmdCursor)))
+	{
+		return hr;
+	}
+
 	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL, (PCBYTE)&cmd, sizeof(cmd), (PBYTE)&rsp, &rspSize);
 
 	if(res == TBS_SUCCESS)
 	{
-		if(rsp.responseCode != 0)
+		struct TPM2_NV_READPUBLIC_OUT
+		{
+			TPM_ST tag;
+			UINT32 responseSize;
+			TPM_RC responseCode;
+			/*=================*/
+			TPM2B_NV_PUBLIC nvPublic;
+			TPM2B_NAME nvName;
+		} *rspStruct = (TPM2_NV_READPUBLIC_OUT*)rsp;
+		UINT32 responseCode = ENDIANSWAPUINT32(rspStruct->responseCode);
+		if(responseCode != 0)
 		{
 			return E_FAIL;
 		} 
 		else
 		{
-			UINT16 sz = ENDIANSWAPUINT16(rsp.nvPublic.b.size);
-			if(!memcpy_s(nvPublic, nvPublicSize, rsp.nvPublic.b.buffer, sz))
+			UINT16 sz = ENDIANSWAPUINT16(rspStruct->nvPublic.b.size);
+			if(!memcpy_s(nvPublic, nvPublicSize, rspStruct->nvPublic.b.buffer, sz))
 			{
 				return S_OK;
 			}
@@ -3991,49 +4143,112 @@ HRESULT NvInfo20(
 	}
 	else
 	{
-		return (HRESULT)res;
+		return E_FAIL;
 	}
 }
 
 HRESULT NvRelease20(
 	TBS_HCONTEXT hPlatformContextHandle,
+	UINT32 authHandle,
 	_In_reads_(authKeySize) PCBYTE authKey,
 	UINT32 authKeySize,
 	UINT32 nvIndex
-	)
+)
 {
-	struct TPM2_NV_UNDEFINE_IN
-	{
-		TPMI_ST_COMMAND_TAG tag = ENDIANSWAPUINT16(TPM_ST_SESSIONS);
-		UINT32 commandSize;
-		TPM_CC commandCode = ENDIANSWAPUINT32(TPM_CC_NV_Read);
-		/*---------------------------------------------*/
-		TPMI_RH_PROVISION /*@*/authHandle = ENDIANSWAPUINT32(authHandle);
-		TPMI_RH_NV_INDEX index;
-		/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-		UINT32 sessionSize;
-		TPMS_AUTH_COMMAND sessionCommand;
-		/*=============================================*/
-	} cmd;
-
-	cmd.commandSize = sizeof(cmd);
-	cmd.index = ENDIANSWAPUINT32(nvIndex);
-
-	PrepareAuth(&cmd.sessionCommand, authKeySize, authKey);
-
-	cmd.sessionSize = ENDIANSWAPUINT32(sizeof(cmd.sessionCommand));
-
-	struct TPM2_NV_UNDEFINE_OUT
-	{
-		TPM_ST tag;
-		UINT32 responseSize;
-		TPM_RC responseCode;
-	} rsp;
-
+	BYTE cmd[0x200] = { 0 };
+	BYTE rsp[0x200] = { 0 };
+	UINT32 cmdSize = sizeof(cmd);
 	UINT32 rspSize = sizeof(rsp);
+	UINT32 cmdCursor = 0;
+	HRESULT hr = S_OK;
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPMI_ST_COMMAND_TAG(TPM_ST_SESSIONS))))
+	{
+		return hr;
+	}
+
+	UINT32 sizeOffset = cmdCursor;
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(0x00000000))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, TPM_CC(TPM_CC_NV_UndefineSpace))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, authHandle)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, nvIndex)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(
+		sizeof(UINT32) + // authSessionHandle
+		sizeof(UINT16) + // nonce
+		sizeof(BYTE) + // attributes
+		sizeof(UINT16) + // keySize
+		authKeySize
+	))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT32(TPM_RS_PW))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, UINT16(0x0000))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, BYTE(0x00))))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (UINT16)authKeySize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &cmdCursor, (PBYTE)authKey, authKeySize)))
+	{
+		return hr;
+	}
+
+	if (FAILED(hr = WriteBigEndian(cmd, cmdSize, &sizeOffset, cmdCursor)))
+	{
+		return hr;
+	}
 
 	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL,
-		reinterpret_cast<PCBYTE>(&cmd), sizeof(cmd), reinterpret_cast<PBYTE>(&rsp), &rspSize);
+		reinterpret_cast<PCBYTE>(&cmd), cmdCursor, reinterpret_cast<PBYTE>(&rsp), &rspSize);
 
-	return (HRESULT)res;
+	if (res == TBS_SUCCESS)
+	{
+		struct TPM2_NV_UNDEFINE_OUT
+		{
+			TPM_ST tag;
+			UINT32 responseSize;
+			TPM_RC responseCode;
+		} *rspStruct = (TPM2_NV_UNDEFINE_OUT*)rsp;
+		UINT32 responseCode = ENDIANSWAPUINT32(rspStruct->responseCode);
+		if (responseCode != 0)
+		{
+			return E_FAIL;
+		}
+		else
+		{
+			return S_OK;
+		}
+	}
+	return E_FAIL;
 }

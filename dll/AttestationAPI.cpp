@@ -31,6 +31,7 @@ BCRYPT_ALG_HANDLE g_hSHA256HmacAlg = NULL;
 BCRYPT_ALG_HANDLE g_hSHA384HashAlg = NULL;
 BCRYPT_ALG_HANDLE g_hSHA384HmacAlg = NULL;
 
+
 /// <summary>
 ///    Calculate SHA hash or HMAC.
 /// </summary>
@@ -3428,7 +3429,13 @@ DllExport HRESULT TpmNVInfo(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//Not implemented yet		
+		//Not implemented yet	
+		BYTE nvInfo[0x200];
+		UINT32 nvInfoSize = sizeof(nvInfo);
+		if (FAILED(hr = NvInfo20(hPlatformTbsHandle, nvIndex, nvInfo, nvInfoSize)))
+		{
+			goto Cleanup;
+		}
 	}
 	else
 	{
@@ -3474,7 +3481,7 @@ DllExport HRESULT TpmNVReleaseSpace(
 	}
 
 	// get ownerAuth
-	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_FULL, pbOwnerAuth, &cbOwnerAuth)))
+	if (FAILED(hr = TpmGetOwnerAuth(hPlatformTbsHandle, tpmVersion, pbOwnerAuth, &cbOwnerAuth)))
 	{
 		goto Cleanup;
 	}
@@ -3488,7 +3495,7 @@ DllExport HRESULT TpmNVReleaseSpace(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		if (FAILED(hr = NvRelease20(hPlatformTbsHandle, nvAuth, nvAuthSize, nvIndex)))
+		if (FAILED(hr = NvRelease20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex)))
 		{
 			goto Cleanup;
 		}
@@ -3534,7 +3541,7 @@ DllExport HRESULT TpmNVDefineSpace(
 		goto Cleanup;
 	}
 	// get ownerAuth
-	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_FULL, pbOwnerAuth, &cbOwnerAuth))) {
+	if (FAILED(hr = TpmGetOwnerAuth(hPlatformTbsHandle, tpmVersion, pbOwnerAuth, &cbOwnerAuth))) {
 		goto Cleanup;
 	}
 	/* Debug
@@ -3563,7 +3570,8 @@ DllExport HRESULT TpmNVDefineSpace(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		DWORD attr = 0x02040002;
+		//DWORD attr = 0x02040002;
+		DWORD attr = (DWORD)wcstoul(permissions, NULL, 16);
 		if (FAILED(hr = NvDefineSpace20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, attr, nvAuth, nvAuthSize, indexSize)))
 		{
 			goto Cleanup;
@@ -3589,7 +3597,9 @@ DllExport HRESULT TpmNVReadValue(
 	UINT32 nvIndex,
 	_Out_writes_to_opt_(cbData, *pcbResult) PBYTE pbData,
 	UINT32 cbData,
-	_Out_ PUINT32 pcbResult
+	_Out_ PUINT32 pcbResult,
+	_In_reads_opt_(cbNvAuth) PBYTE pbNvAuth,
+	UINT32 cbNvAuth
 	)
 {
 	HRESULT hr = 0;
@@ -3628,7 +3638,7 @@ DllExport HRESULT TpmNVReadValue(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		if(FAILED(hr = NvRead20(hPlatformTbsHandle, nvIndex, pbOwnerAuth, cbOwnerAuth, nvIndex, 0, pbData, cbData, pcbResult)))
+		if(FAILED(hr = NvRead20(hPlatformTbsHandle, nvIndex, pbNvAuth, cbNvAuth, nvIndex, 0, pbData, cbData, pcbResult)))
 		{
 			goto Cleanup;
 		}
@@ -3687,7 +3697,15 @@ DllExport HRESULT TpmNVWriteValueAuth(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		if(FAILED(hr = NvWrite20(hPlatformTbsHandle, nvIndex, nvAuth, cbNvAuth, nvIndex, 0, pbData, cbData)))
+		BYTE storageAuth[255] = { 0 };
+		UINT32 size = sizeof(storageAuth);
+
+		if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, 13, storageAuth, &size)))
+		{
+			goto Cleanup;
+		}
+
+		if(FAILED(hr = NvWrite20(hPlatformTbsHandle, TPM_RH_OWNER, storageAuth, size, nvIndex, 0, pbData, cbData)))
 		{
 			goto Cleanup;
 		}

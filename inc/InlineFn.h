@@ -420,4 +420,10 @@ Cleanup:
     return hr;
 }
 
+inline HRESULT TpmGetOwnerAuth(TBS_HCONTEXT context, UINT32 tpmVersion, PBYTE auth, PUINT32 authSize)
+{
+#define TBS_STORAGEAUTH 13
+	return Tbsi_Get_OwnerAuth(context, tpmVersion == TPM_VERSION_12 ? TBS_OWNERAUTH_TYPE_FULL : TBS_STORAGEAUTH, auth, authSize);
+}
+
 #endif //INLINEFN_H

@@ -614,7 +614,9 @@ DllExport HRESULT TpmNVReadValue(
 	UINT32 nvIndex,
 	_Out_writes_to_opt_(cbData, *pcbResult) PBYTE pbData,
 	UINT32 cbData,
-	_Out_ PUINT32 pcbResult
+	_Out_ PUINT32 pcbResult,
+	_In_reads_opt_(cbNvAuth) PBYTE pbNvAuth,
+	UINT32 cbNvAuth
 	);
 
 DllExport HRESULT TpmPCRExtend(

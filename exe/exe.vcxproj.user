@@ -4,7 +4,7 @@
     <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
     <LocalDebuggerCommandArguments>nvread 0x40000010</LocalDebuggerCommandArguments>
     <RemoteDebuggerCommand>C:\TPMTool\TPMTool.exe</RemoteDebuggerCommand>
-    <RemoteDebuggerCommandArguments>nvdefine 0x1c10110 0x14 hello aaa</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerCommandArguments>nvread 0x1c10110 hello</RemoteDebuggerCommandArguments>
     <RemoteDebuggerWorkingDirectory>C:\TPMTool\</RemoteDebuggerWorkingDirectory>
     <RemoteDebuggerServerName>10.105.151.171</RemoteDebuggerServerName>
     <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
@@ -19,5 +19,14 @@
     <RemoteDebuggerWorkingDirectory>C:\TPMTool\</RemoteDebuggerWorkingDirectory>
     <RemoteDebuggerServerName>10.105.151.171</RemoteDebuggerServerName>
     <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <RemoteDebuggerCommand>C:\TPMTool\TPMTool.exe</RemoteDebuggerCommand>
+    <RemoteDebuggerCommandArguments>
+    </RemoteDebuggerCommandArguments>
+    <RemoteDebuggerWorkingDirectory>C:\TPMTool\</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>10.105.151.171</RemoteDebuggerServerName>
+    <DeploymentDirectory>C:\TPMTool\</DeploymentDirectory>
+    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

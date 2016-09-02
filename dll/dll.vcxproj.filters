@@ -41,13 +41,13 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AttestationApi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Tpm12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TPM20.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AttestationApi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
