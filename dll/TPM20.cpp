@@ -4074,7 +4074,7 @@ HRESULT NvInfo20(
 	TBS_HCONTEXT hPlatformContextHandle,
 	UINT32 nvIndex,
 	_Out_writes_to_opt_ (nvPublicSize) PBYTE nvPublic,
-	UINT32 nvPublicSize
+	PUINT32 nvPublicSize
 	)
 {
 	BYTE cmd[0x200] = { 0 };
@@ -4110,7 +4110,7 @@ HRESULT NvInfo20(
 		return hr;
 	}
 
-	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL, (PCBYTE)&cmd, sizeof(cmd), (PBYTE)&rsp, &rspSize);
+	TBS_RESULT res = Tbsip_Submit_Command(hPlatformContextHandle, TBS_COMMAND_LOCALITY_ZERO, TBS_COMMAND_PRIORITY_NORMAL, (PCBYTE)&cmd, cmdCursor, (PBYTE)&rsp, &rspSize);
 
 	if(res == TBS_SUCCESS)
 	{
@@ -4124,14 +4124,15 @@ HRESULT NvInfo20(
 			TPM2B_NAME nvName;
 		} *rspStruct = (TPM2_NV_READPUBLIC_OUT*)rsp;
 		UINT32 responseCode = ENDIANSWAPUINT32(rspStruct->responseCode);
-		if(responseCode != 0)
+		if(responseCode != 0 && responseCode != (RC_VER1 | TPM_RC_HANDLE))
 		{
 			return E_FAIL;
 		} 
 		else
 		{
 			UINT16 sz = ENDIANSWAPUINT16(rspStruct->nvPublic.b.size);
-			if(!memcpy_s(nvPublic, nvPublicSize, rspStruct->nvPublic.b.buffer, sz))
+			*nvPublicSize = sz;
+			if(!memcpy_s(nvPublic, *nvPublicSize, rspStruct->nvPublic.b.buffer, sz))
 			{
 				return S_OK;
 			}

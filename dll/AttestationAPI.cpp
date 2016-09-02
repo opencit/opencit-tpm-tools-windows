@@ -3432,9 +3432,16 @@ DllExport HRESULT TpmNVInfo(
 		//Not implemented yet	
 		BYTE nvInfo[0x200];
 		UINT32 nvInfoSize = sizeof(nvInfo);
-		if (FAILED(hr = NvInfo20(hPlatformTbsHandle, nvIndex, nvInfo, nvInfoSize)))
+		if (FAILED(hr = NvInfo20(hPlatformTbsHandle, nvIndex, nvInfo, &nvInfoSize)))
 		{
 			goto Cleanup;
+		}
+		else
+		{
+			if(nvInfoSize != 0)
+				wprintf(L"NVRAM index defined	: 0x%08x (%d)\n", nvIndex, nvIndex);
+			else 
+				wprintf(L"index 0x%08x not defined\n", nvIndex);
 		}
 	}
 	else
@@ -3570,8 +3577,7 @@ DllExport HRESULT TpmNVDefineSpace(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//DWORD attr = 0x02040002;
-		DWORD attr = (DWORD)wcstoul(permissions, NULL, 16);
+		DWORD attr = 0x02020004;		
 		if (FAILED(hr = NvDefineSpace20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, attr, nvAuth, nvAuthSize, indexSize)))
 		{
 			goto Cleanup;
@@ -3597,9 +3603,7 @@ DllExport HRESULT TpmNVReadValue(
 	UINT32 nvIndex,
 	_Out_writes_to_opt_(cbData, *pcbResult) PBYTE pbData,
 	UINT32 cbData,
-	_Out_ PUINT32 pcbResult,
-	_In_reads_opt_(cbNvAuth) PBYTE pbNvAuth,
-	UINT32 cbNvAuth
+	_Out_ PUINT32 pcbResult
 	)
 {
 	HRESULT hr = 0;
@@ -3624,7 +3628,7 @@ DllExport HRESULT TpmNVReadValue(
 		goto Cleanup;
 	}
 	// get ownerAuth
-	if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, TBS_OWNERAUTH_TYPE_FULL, pbOwnerAuth, &cbOwnerAuth))) {
+	if (FAILED(hr = TpmGetOwnerAuth(hPlatformTbsHandle, tpmVersion, pbOwnerAuth, &cbOwnerAuth))) {
 		goto Cleanup;
 	}
 
@@ -3638,7 +3642,7 @@ DllExport HRESULT TpmNVReadValue(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		if(FAILED(hr = NvRead20(hPlatformTbsHandle, nvIndex, pbNvAuth, cbNvAuth, nvIndex, 0, pbData, cbData, pcbResult)))
+		if(FAILED(hr = NvRead20(hPlatformTbsHandle, TPM_RH_OWNER, pbOwnerAuth, cbOwnerAuth, nvIndex, 0, pbData, cbData, pcbResult)))
 		{
 			goto Cleanup;
 		}
@@ -3697,15 +3701,7 @@ DllExport HRESULT TpmNVWriteValueAuth(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		BYTE storageAuth[255] = { 0 };
-		UINT32 size = sizeof(storageAuth);
-
-		if (FAILED(hr = Tbsi_Get_OwnerAuth(hPlatformTbsHandle, 13, storageAuth, &size)))
-		{
-			goto Cleanup;
-		}
-
-		if(FAILED(hr = NvWrite20(hPlatformTbsHandle, TPM_RH_OWNER, storageAuth, size, nvIndex, 0, pbData, cbData)))
+		if(FAILED(hr = NvWrite20(hPlatformTbsHandle, nvIndex, nvAuth, cbNvAuth, nvIndex, 0, pbData, cbData)))
 		{
 			goto Cleanup;
 		}

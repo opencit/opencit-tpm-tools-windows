@@ -441,7 +441,7 @@ HRESULT NvInfo20(
 	TBS_HCONTEXT hPlatformContextHandle,
 	UINT32 nvIndex,
 	_Out_writes_to_opt_(nvPublicSize) PBYTE nvPublic,
-	UINT32 nvPublicSize
+	_Inout_ PUINT32 nvPublicSize
 );
 
 #if defined(__cplusplus)

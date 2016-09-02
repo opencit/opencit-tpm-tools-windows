@@ -9161,9 +9161,6 @@ HRESULT PcpToolNVRead(
 {
 	HRESULT hr = 0;
 	UINT32 nvIndex = 0;
-	PCWSTR nvPassword = NULL;
-	BYTE nvAuthDigest[20] = { 0 };
-	UINT32 result = 0;
 	BYTE pbData[20] = { 0 };
 	UINT32 cbData = 20; // only read 20 bytes from the nvIndex area
 	UINT32 rspDLen = 0;
@@ -9179,25 +9176,9 @@ HRESULT PcpToolNVRead(
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
-	if (argc > 3)
-	{
-		nvPassword = argv[3];
-		if (FAILED(hr = TpmAttiShaHash(
-			BCRYPT_SHA1_ALGORITHM,
-			NULL,
-			0,
-			(PBYTE)nvPassword,
-			(UINT32)(wcsnlen_s(nvPassword, ARG_MAX) * sizeof(WCHAR)),
-			nvAuthDigest,
-			sizeof(nvAuthDigest),
-			&result)))
-		{
-			goto Cleanup;
-		}
-	}
 
 	/* call nvreadvalue to read 20 bytes */
-	hr = TpmNVReadValue(nvIndex, pbData, cbData, &rspDLen, nvAuthDigest, result);
+	hr = TpmNVReadValue(nvIndex, pbData, cbData, &rspDLen);
 	if (hr != S_OK) {
 		wprintf(L"tpm nv readvalue failed with return value %lu\n", hr);
 	}
