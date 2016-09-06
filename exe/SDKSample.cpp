@@ -9336,7 +9336,6 @@ HRESULT PcpToolNVRelease(
 	HRESULT hr = 0;
 	UINT32 nvIndex = 0;
 	PCWSTR nvPassword = NULL;
-	PCWSTR permissions = NULL;
 	BYTE nvAuthDigest[20] = { 0 };
 	UINT32 result = 0;
 

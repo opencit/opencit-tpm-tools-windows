@@ -4327,20 +4327,13 @@ nvReadVaule12(
 )
 {
 	HRESULT hr = S_OK;
-	UINT32 cbRequired = 0;
 	BYTE cmd[0x200] = { 0 };
 	BYTE rsp[0x200] = { 0 };
 	BYTE paramHash[0x200] = { 0 };
 	UINT32 cbRsp = sizeof(rsp);
 	UINT32 cursorCmd = 0;
-	UINT32 cursorParamHash = 0;
 	UINT32 cursorRsp = 0;
-	UINT32 authHandle = 0;
 	BYTE authBuffer[3 * SHA1_DIGEST_SIZE + sizeof(BYTE)] = { 0 };
-	PBYTE pParamDigest = &authBuffer[0];
-	PBYTE pNonceEven = &authBuffer[SHA1_DIGEST_SIZE];
-	PBYTE pNonceOdd = &authBuffer[2 * SHA1_DIGEST_SIZE];
-	PBYTE pContinueAuthSession = &authBuffer[3 * SHA1_DIGEST_SIZE];
 	UINT32 paramSize = 0;
 	UINT32 returnCode = 0;
 	BYTE responseAuthReference[SHA1_DIGEST_SIZE] = { 0 };
