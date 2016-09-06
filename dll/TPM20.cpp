@@ -22,7 +22,6 @@ Abstract:
 --*/
 
 #include "stdafx.h"
-#include <tcg/tpm20/tpm20.h>
 #include <minwinbase.h>
 
 // Hard-coded policies
@@ -3933,7 +3932,7 @@ HRESULT NvRead20(
 	UINT32 authKeySize,
 	UINT32 nvIndex,
 	UINT32 offset,
-	_Out_writes_to_opt_(outputSize) PBYTE output,
+	_Out_writes_to_(outputSize, *actualDataSize) PBYTE output,
 	UINT32 outputSize,
 	_Out_ PUINT32 actualDataSize)
 {
@@ -4073,7 +4072,7 @@ HRESULT NvRead20(
 HRESULT NvInfo20(
 	TBS_HCONTEXT hPlatformContextHandle,
 	UINT32 nvIndex,
-	_Out_writes_to_opt_ (nvPublicSize) PBYTE nvPublic,
+	_Out_writes_to_(nvPublicSize, *nvPublicSize) PBYTE nvPublic,
 	PUINT32 nvPublicSize
 	)
 {
