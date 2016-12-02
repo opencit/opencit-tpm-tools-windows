@@ -269,6 +269,18 @@ PcpToolCreateKey(
     );
 
 HRESULT
+PcpToolCreateSigningKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
+PcpToolCreateBindingKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolGetUserCertStore(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
@@ -425,10 +437,22 @@ PcpToolEncrypt(
     );
 
 HRESULT
+PcpToolEncryptKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolDecrypt(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
     );
+
+HRESULT
+PcpToolSign(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
 
 HRESULT
 PcpToolWrapPlatformKey(

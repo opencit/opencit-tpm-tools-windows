@@ -729,7 +729,7 @@ PcpToolDisplayKey(
         goto Cleanup;
     }
 
-    PcpToolLevelPrefix(level);
+    /*PcpToolLevelPrefix(level);
     wprintf(L"<RSAKey size=\"%u\"", cbKey);
     if((lpKeyName != NULL) &&
        (wcsnlen_s(lpKeyName, 2097) != 0))
@@ -820,7 +820,15 @@ PcpToolDisplayKey(
         wprintf(L"</Prime2>\n");
     }
     PcpToolLevelPrefix(level);
-    wprintf(L"</RSAKey>\n");
+    wprintf(L"</RSAKey>\n");*/
+
+	for (UINT32 n = 0; n < pKey->cbModulus; n++)
+	{
+		wprintf(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
+			pKey->cbPublicExp +
+			n]);
+	}
+	wprintf(L"\n");
 
 Cleanup:
     return hr;
@@ -954,7 +962,7 @@ PcpToolDisplayKeyBlob(
                      p12Key->cbTpmKey))
     {
         // TPM 1.2 Key
-        PcpToolLevelPrefix(level);
+        /*PcpToolLevelPrefix(level);
         wprintf(L"<BCRYPT_KEY_BLOB size=\"%u\" sizeHdr=\"%u\">\n", cbKeyBlob, p12Key->cbHeader);
         PcpToolLevelPrefix(level + 1);
         wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
@@ -971,7 +979,7 @@ PcpToolDisplayKeyBlob(
         cursor += p12Key->cbHeader;
         wprintf(L"<TPM_KEY12 size=\"%u\">\n", p12Key->cbTpmKey);
         PcpToolLevelPrefix(level + 2);
-        for(UINT32 n = 0; n < cbKeyBlob - cursor; n++)
+		for (UINT32 n = 0; n < p12Key->cbTpmKey; n++)
         {
             wprintf(L"%02x", pbKeyBlob[cursor]);
             cursor++;
@@ -980,7 +988,15 @@ PcpToolDisplayKeyBlob(
         PcpToolLevelPrefix(level + 1);
         wprintf(L"</TPM_KEY12>\n");
         PcpToolLevelPrefix(level);
-        wprintf(L"</BCRYPT_KEY_BLOB>\n");
+        wprintf(L"</BCRYPT_KEY_BLOB>\n");*/
+
+		cursor += p12Key->cbHeader;
+		for (UINT32 n = 0; n < p12Key->cbTpmKey; n++)
+		{
+			wprintf(L"%02x", pbKeyBlob[cursor]);
+			cursor++;
+		}
+		wprintf(L"\n");
     }
     else if((pW8Key != NULL) &&
             (cbKeyBlob >= sizeof(PCP_KEY_BLOB_WIN8)) &&
@@ -1231,7 +1247,7 @@ PcpToolDisplayKeyAttestation(
         goto Cleanup;
     }
 
-    PcpToolLevelPrefix(level);
+    /*PcpToolLevelPrefix(level);
     wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
            ((PBYTE)&pAttestation->Magic)[0],
            ((PBYTE)&pAttestation->Magic)[1],
@@ -1288,7 +1304,25 @@ PcpToolDisplayKeyAttestation(
         goto Cleanup;
     }
     PcpToolLevelPrefix(level);
-    wprintf(L"</KeyBlob>\n");
+    wprintf(L"</KeyBlob>\n");*/
+
+	cursor += pAttestation->HeaderSize;
+	for (UINT32 n = 0; n < pAttestation->cbKeyAttest; n++)
+	{
+		wprintf(L"%02x", pbAttestation[cursor]);
+		cursor++;
+	}
+	wprintf(L" ");
+	for (UINT32 n = 0; n < pAttestation->cbSignature; n++)
+	{
+		wprintf(L"%02x", pbAttestation[cursor]);
+		cursor++;
+	}
+	wprintf(L" ");
+	if (FAILED(hr = PcpToolDisplayKeyBlob(&pbAttestation[cursor], pAttestation->cbKeyBlob, level + 1)))
+	{
+		goto Cleanup;
+	}
 
 Cleanup:
     return hr;

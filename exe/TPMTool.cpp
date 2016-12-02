@@ -50,6 +50,8 @@ PcpToolGetHelp(
     wprintf(L" EnumerateKeys\n");
     wprintf(L" GetCertStore\n");
     wprintf(L" CreateKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
+	wprintf(L" CreateSigningKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
+	wprintf(L" CreateBindingKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
     wprintf(L" ImportKey [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
     wprintf(L" ExportKey [key name] [migrationAuth] {key file}\n");
     wprintf(L" ChangeKeyUsageAuth [key name] [usageAuth] [newUsageAuth]\n");
@@ -57,6 +59,7 @@ PcpToolGetHelp(
     wprintf(L" GetPubKey [key name] {key File}\n");
     wprintf(L" Encrypt [pubkey file] [data] {blob file}\n");
     wprintf(L" Decrypt [key name] [blob file] {usageAuth}\n");
+	wprintf(L" Sign [key name] [data] {usageAuth}\n");
 
     wprintf(L"\nAIK Management:\n");
     wprintf(L" CreateAIK [key name] {idBinding file} {nonce} {usageAuth | @ | ! }\n");
@@ -189,6 +192,14 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolCreateKey(argc, argv);
         }
+		else if (!_wcsicmp(command, L"createsigningkey"))
+		{
+			hr = PcpToolCreateSigningKey(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"createbindingkey"))
+		{
+			hr = PcpToolCreateBindingKey(argc, argv);
+		}
         else if(!_wcsicmp(command, L"getcertstore"))
         {
             hr = PcpToolGetUserCertStore(argc, argv);
@@ -293,10 +304,18 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolEncrypt(argc, argv);
         }
-        else if(!_wcsicmp(command, L"decrypt"))
+		else if (!_wcsicmp(command, L"encryptkey"))
+		{
+			hr = PcpToolEncryptKey(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"decrypt"))
         {
             hr = PcpToolDecrypt(argc, argv);
         }
+		else if (!_wcsicmp(command, L"sign"))
+		{
+			hr = PcpToolSign(argc, argv);
+		}
         else if(!_wcsicmp(command, L"wrapkey"))
         {
             hr = PcpToolWrapPlatformKey(argc, argv);
