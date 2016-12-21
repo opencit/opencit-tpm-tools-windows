@@ -1014,6 +1014,7 @@ PcpToolDisplayKeyBlob(
                           pW8Key->cbEncryptedSecret +
                           pW8Key->cbTpm12HostageBlob))
     {
+		/*
         // TPM 2.0 Key
         PcpToolLevelPrefix(level);
         wprintf(L"<PCP_KEY_BLOB_WIN8 size=\"%u\" sizeHdr=\"%u\">\n", cbKeyBlob, pW8Key->cbHeader);
@@ -1212,6 +1213,14 @@ PcpToolDisplayKeyBlob(
 
         PcpToolLevelPrefix(level);
         wprintf(L"</PCP_KEY_BLOB_WIN8>\n");
+		*/
+		cursor =0;
+		for (UINT32 n = 0; n < cbKeyBlob; n++)
+		{
+			wprintf(L"%02x", pbKeyBlob[cursor]);
+			cursor++;
+		}
+		wprintf(L"\n");
     }
     else
     {
