@@ -3010,7 +3010,8 @@ WrapPlatformKey12(
             break;
         case NCRYPT_PCP_ENCRYPTION_KEY:
             tpmKeyUsage = 0x0014; // TPM_KEY_BIND
-            encScheme = 0x0002;   // TPM_ES_RSAESPKCSv15
+            //encScheme = 0x0002;   // TPM_ES_RSAESPKCSv15
+			encScheme = 0x0003;   // TPM_ES_RSAESOAEP_SHA1_MGF1
             break;
         case NCRYPT_PCP_GENERIC_KEY:
             tpmKeyUsage = 0x0015; // TPM_KEY_LEGACY

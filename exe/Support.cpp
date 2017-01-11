@@ -828,7 +828,7 @@ PcpToolDisplayKey(
 			pKey->cbPublicExp +
 			n]);
 	}
-	wprintf(L"\n");
+	wprintf(L" ");
 
 Cleanup:
     return hr;

@@ -353,6 +353,18 @@ PcpToolGetPubKey(
     );
 
 HRESULT
+PcpToolGetPvtKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
+PcpToolGetFullKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolGetPubAIK(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
@@ -437,12 +449,6 @@ PcpToolEncrypt(
     );
 
 HRESULT
-PcpToolEncryptKey(
-int argc,
-_In_reads_(argc) WCHAR* argv[]
-);
-
-HRESULT
 PcpToolDecrypt(
     int argc,
     _In_reads_(argc) WCHAR* argv[]
@@ -450,6 +456,12 @@ PcpToolDecrypt(
 
 HRESULT
 PcpToolSign(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
+PcpToolUnbind(
 int argc,
 _In_reads_(argc) WCHAR* argv[]
 );

@@ -1858,6 +1858,8 @@ usageAuth value and a migrationAuth
 	UINT32 pcrMask = 0;
 	BYTE pbKeyPub[1024] = { 0 };
 	DWORD cbKeyPub = 0;
+	PBYTE pbKey = NULL;
+	DWORD cbKey = 0;
 	BOOLEAN tUIRequested = false;
 	LPCWSTR optionalPIN = L"This key requires usage consent and an optional PIN.";
 	LPCWSTR mandatoryPIN = L"This key has a mandatory PIN.";
@@ -2070,6 +2072,42 @@ usageAuth value and a migrationAuth
 	{
 		goto Cleanup;
 	}
+
+	//export the opaque key blob
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		NULL,
+		NULL,
+		0,
+		(PDWORD)&cbKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbKey, cbKey)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		NULL,
+		pbKey,
+		cbKey,
+		(PDWORD)&cbKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+	/* output signing key opaque key blob*/
+	for (UINT32 n = 0; n < cbKey; n++)
+	{
+		wprintf(L"%02x", pbKey[n]);
+	}
+	wprintf(L"\n");
 
 Cleanup:
 	if (hKey != NULL)
@@ -2110,6 +2148,8 @@ usageAuth value and a migrationAuth
 	UINT32 pcrMask = 0;
 	BYTE pbKeyPub[1024] = { 0 };
 	DWORD cbKeyPub = 0;
+	PBYTE pbKey = NULL;
+	DWORD cbKey = 0;
 	BOOLEAN tUIRequested = false;
 	LPCWSTR optionalPIN = L"This key requires usage consent and an optional PIN.";
 	LPCWSTR mandatoryPIN = L"This key has a mandatory PIN.";
@@ -2322,6 +2362,42 @@ usageAuth value and a migrationAuth
 	{
 		goto Cleanup;
 	}
+
+	//export the opaque key blob
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		NULL,
+		NULL,
+		0,
+		(PDWORD)&cbKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbKey, cbKey)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		NULL,
+		pbKey,
+		cbKey,
+		(PDWORD)&cbKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+	/* output binding key opaque key blob*/
+	for (UINT32 n = 0; n < cbKey; n++)
+	{
+		wprintf(L"%02x", pbKey[n]);
+	}
+	wprintf(L"\n");
 
 Cleanup:
 	if (hKey != NULL)
@@ -5017,8 +5093,8 @@ _In_reads_(argc) WCHAR* argv[]
 )
 /*++ Haidong.xia@intel.com
 This function will import an AIK key on the KSP. Change from the immportKey function is the
- 1. key type: BCRYPT_OPAQUE_KEY_BLOB
- 2. the input parameter is in hex. 
+1. key type: BCRYPT_OPAQUE_KEY_BLOB
+2. the input parameter is in hex.
 Optionally it may be imported with a
 usageAuth value and a migrationAuth
 --*/
@@ -5223,10 +5299,10 @@ usageAuth value and a migrationAuth
 	}
 
 	// Output results
-	if (FAILED(hr = PcpToolDisplayKey(keyName, pbPubKey, cbPubKey, 0)))
+	/*if (FAILED(hr = PcpToolDisplayKey(keyName, pbPubKey, cbPubKey, 0)))
 	{
 		goto Cleanup;
-	}
+	}*/
 
 Cleanup:
 	if (hKey != NULL)
@@ -5240,7 +5316,7 @@ Cleanup:
 		hProv = NULL;
 	}
 	ZeroAndFree((PVOID*)&pbKey, cbKey);
-	PcpToolCallResult(L"PcpToolImportKey()", hr);
+	PcpToolCallResult(L"PcpToolImportAIK()", hr);
 	return hr;
 }
 
@@ -5560,6 +5636,222 @@ Cleanup:
     }
     PcpToolCallResult(L"PcpToolGetPubKey()", hr);
     return hr;
+}
+
+HRESULT
+PcpToolGetPvtKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+/*++
+Export the public portion from a user key in the PCP storage as
+BCRYPT_RSAKEY_BLOB structure.
+--*/
+{
+	HRESULT hr = S_OK;
+	NCRYPT_PROV_HANDLE hProv = NULL;
+	NCRYPT_KEY_HANDLE hKey = NULL;
+	PCWSTR keyName = NULL;
+	PCWSTR keyFile = NULL;
+	BYTE pbPubKey[1024] = { 0 };
+	DWORD cbPubKey = 0;
+
+	// Paranoid check
+	if (argc < 2)
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Key Name
+	if (argc > 2)
+	{
+		keyName = argv[2];
+	}
+	else
+	{
+		wprintf(L"%s %s [key name] {key File}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Optional parameter: Export file
+	if (argc > 3)
+	{
+		keyFile = argv[3];
+	}
+
+	// Open key
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
+		&hProv,
+		MS_PLATFORM_CRYPTO_PROVIDER,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
+		hProv,
+		&hKey,
+		keyName,
+		0,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	// Export public key
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_RSAPRIVATE_BLOB,
+		NULL,
+		pbPubKey,
+		sizeof(pbPubKey),
+		&cbPubKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	// Export key
+	if (keyFile != NULL)
+	{
+		if (FAILED(hr = PcpToolWriteFile(keyFile, pbPubKey, cbPubKey)))
+		{
+			goto Cleanup;
+		}
+	}
+
+	// Output results
+	if (FAILED(hr = PcpToolDisplayKey(keyName, pbPubKey, cbPubKey, 0)))
+	{
+		goto Cleanup;
+	}
+
+Cleanup:
+	if (hKey != NULL)
+	{
+		NCryptFreeObject(hKey);
+		hKey = NULL;
+	}
+	if (hProv != NULL)
+	{
+		NCryptFreeObject(hProv);
+		hProv = NULL;
+	}
+	PcpToolCallResult(L"PcpToolGetPvtKey()", hr);
+	return hr;
+}
+
+HRESULT
+PcpToolGetFullKey(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+/*++
+Export the public portion from a user key in the PCP storage as
+BCRYPT_RSAKEY_BLOB structure.
+--*/
+{
+	HRESULT hr = S_OK;
+	NCRYPT_PROV_HANDLE hProv = NULL;
+	NCRYPT_KEY_HANDLE hKey = NULL;
+	PCWSTR keyName = NULL;
+	PCWSTR keyFile = NULL;
+	BYTE pbPubKey[2048] = { 0 };
+	DWORD cbPubKey = 0;
+
+	// Paranoid check
+	if (argc < 2)
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Key Name
+	if (argc > 2)
+	{
+		keyName = argv[2];
+	}
+	else
+	{
+		wprintf(L"%s %s [key name] {key File}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Optional parameter: Export file
+	if (argc > 3)
+	{
+		keyFile = argv[3];
+	}
+
+	// Open key
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
+		&hProv,
+		MS_PLATFORM_CRYPTO_PROVIDER,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
+		hProv,
+		&hKey,
+		keyName,
+		0,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	// Export public key
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
+		hKey,
+		NULL,
+		BCRYPT_RSAFULLPRIVATE_BLOB,
+		NULL,
+		pbPubKey,
+		sizeof(pbPubKey),
+		&cbPubKey,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	// Export key
+	if (keyFile != NULL)
+	{
+		if (FAILED(hr = PcpToolWriteFile(keyFile, pbPubKey, cbPubKey)))
+		{
+			goto Cleanup;
+		}
+	}
+
+	// Output results
+	if (FAILED(hr = PcpToolDisplayKey(keyName, pbPubKey, cbPubKey, 0)))
+	{
+		goto Cleanup;
+	}
+
+Cleanup:
+	if (hKey != NULL)
+	{
+		NCryptFreeObject(hKey);
+		hKey = NULL;
+	}
+	if (hProv != NULL)
+	{
+		NCryptFreeObject(hProv);
+		hProv = NULL;
+	}
+	PcpToolCallResult(L"PcpToolGetFullKey()", hr);
+	return hr;
 }
 
 HRESULT
@@ -7446,180 +7738,18 @@ Cleanup:
 
 HRESULT
 PcpToolEncrypt(
-    int argc,
-    _In_reads_(argc) WCHAR* argv[]
-    )
-{
-    HRESULT hr = S_OK;
-    BCRYPT_ALG_HANDLE hAlg = NULL;
-    BCRYPT_KEY_HANDLE hKey = NULL;
-    PCWSTR keyFile = NULL;
-    PCWSTR decData = NULL;
-    PCWSTR blobFile = NULL;
-    UINT32 cbPubkey = 0;
-    PBYTE pbPubkey = NULL;
-    UINT32 cbBlob = 0;
-    PBYTE pbBlob = NULL;
-
-    // Paranoid check
-    if(argc < 2)
-    {
-        hr = E_INVALIDARG;
-        goto Cleanup;
-    }
-
-    // Mandatory parameter: Key File
-    if(argc > 2)
-    {
-        keyFile = argv[2];
-
-        if(FAILED(hr = PcpToolReadFile(keyFile, NULL, 0, &cbPubkey)))
-        {
-            goto Cleanup;
-        }
-        if(FAILED(hr = AllocateAndZero((PVOID*)&pbPubkey, cbPubkey)))
-        {
-            goto Cleanup;
-        }
-        if(FAILED(hr = PcpToolReadFile(
-                            keyFile,
-                            pbPubkey,
-                            cbPubkey,
-                            &cbPubkey)))
-        {
-            goto Cleanup;
-        }
-    }
-    else
-    {
-        wprintf(L"%s %s [pubkey file] [data] {blob file}\n",
-                argv[0],
-                argv[1]);
-        hr = E_INVALIDARG;
-        goto Cleanup;
-    }
-
-    // Mandatory parameter: Data
-    if(argc > 3)
-    {
-        decData = argv[3];
-    }
-    else
-    {
-        wprintf(L"%s %s [pubkey file] [data] {blob file}\n",
-                argv[0],
-                argv[1]);
-        hr = E_INVALIDARG;
-        goto Cleanup;
-    }
-
-    // Optional parameter: Data
-    if(argc > 4)
-    {
-        blobFile = argv[4];
-    }
-
-    // Open the key
-    if(FAILED(hr = HRESULT_FROM_NT(BCryptOpenAlgorithmProvider(
-                                    &hAlg,
-                                    BCRYPT_RSA_ALGORITHM,
-                                    MS_PRIMITIVE_PROVIDER,
-                                    0))))
-    {
-        goto Cleanup;
-    }
-
-    if(FAILED(hr = HRESULT_FROM_NT(BCryptImportKeyPair(
-                                    hAlg,
-                                    NULL,
-                                    BCRYPT_RSAPUBLIC_BLOB,
-                                    &hKey,
-                                    pbPubkey,
-                                    cbPubkey,
-                                    0))))
-    {
-        goto Cleanup;
-    }
-
-    if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
-                                    hKey,
-                                    (PBYTE)decData,
-									(DWORD)((wcsnlen_s(decData, ARG_MAX) + 1) * sizeof(WCHAR)),
-                                    NULL,
-                                    NULL,
-                                    0,
-                                    NULL,
-                                    0,
-                                    (PULONG)&cbBlob,
-                                    BCRYPT_PAD_PKCS1))))
-    {
-        goto Cleanup;
-    }
-    if(FAILED(hr = AllocateAndZero((PVOID*)&pbBlob, cbBlob)))
-    {
-        goto Cleanup;
-    }
-    if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
-                                    hKey,
-                                    (PBYTE)decData,
-									(DWORD)((wcsnlen_s(decData, ARG_MAX) + 1) * sizeof(WCHAR)),
-                                    NULL,
-                                    NULL,
-                                    0,
-                                    pbBlob,
-                                    cbBlob,
-                                    (PULONG)&cbBlob,
-                                    BCRYPT_PAD_PKCS1))))
-    {
-        goto Cleanup;
-    }
-
-    if(blobFile != NULL)
-    {
-        if(FAILED(hr = PcpToolWriteFile(blobFile, pbBlob, cbBlob)))
-        {
-            goto Cleanup;
-        }
-    }
-
-    // Output the result
-    wprintf(L"<Blob size=\"%u\">\n  ", cbBlob);
-    for(UINT32 n = 0; n < cbBlob; n++)
-    {
-        wprintf(L"%02x", pbBlob[n]);
-    }
-    wprintf(L"\n</Blob>\n");
-
-Cleanup:
-    if(hKey != NULL)
-    {
-        BCryptDestroyKey(hKey);
-        hKey = NULL;
-    }
-    if(hAlg != NULL)
-    {
-        BCryptCloseAlgorithmProvider(hAlg, 0);
-        hAlg = NULL;
-    }
-    ZeroAndFree((PVOID*)&pbBlob, cbBlob);
-    ZeroAndFree((PVOID*)&pbPubkey, cbPubkey);
-    PcpToolCallResult(L"PcpToolEncrypt()", hr);
-    return hr;
-}
-
-HRESULT
-PcpToolEncryptKey(
 int argc,
 _In_reads_(argc) WCHAR* argv[]
 )
 {
 	HRESULT hr = S_OK;
-	NCRYPT_PROV_HANDLE hProv = NULL;
-	NCRYPT_KEY_HANDLE hKey = NULL;
-	PCWSTR keyName = NULL;
+	BCRYPT_ALG_HANDLE hAlg = NULL;
+	BCRYPT_KEY_HANDLE hKey = NULL;
+	PCWSTR keyFile = NULL;
 	PCWSTR decData = NULL;
 	PCWSTR blobFile = NULL;
-	PCWSTR keyAuthValue = NULL;
+	UINT32 cbPubkey = 0;
+	PBYTE pbPubkey = NULL;
 	UINT32 cbBlob = 0;
 	PBYTE pbBlob = NULL;
 
@@ -7633,11 +7763,28 @@ _In_reads_(argc) WCHAR* argv[]
 	// Mandatory parameter: Key File
 	if (argc > 2)
 	{
-		keyName = argv[2];
+		keyFile = argv[2];
+
+		if (FAILED(hr = PcpToolReadFile(keyFile, NULL, 0, &cbPubkey)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = AllocateAndZero((PVOID*)&pbPubkey, cbPubkey)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = PcpToolReadFile(
+			keyFile,
+			pbPubkey,
+			cbPubkey,
+			&cbPubkey)))
+		{
+			goto Cleanup;
+		}
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [data] {blob file} {usageAuth}\n",
+		wprintf(L"%s %s [pubkey file] [data] {blob file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -7651,7 +7798,7 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [data] {blob file} {usageAuth}\n",
+		wprintf(L"%s %s [pubkey file] [data] {blob file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -7665,69 +7812,59 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 
 	// Open the key
-	if (FAILED(hr = HRESULT_FROM_NT(NCryptOpenStorageProvider(
-		&hProv,
-		MS_PLATFORM_CRYPTO_PROVIDER,
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptOpenAlgorithmProvider(
+		&hAlg,
+		BCRYPT_RSA_ALGORITHM,
+		MS_PRIMITIVE_PROVIDER,
 		0))))
 	{
 		goto Cleanup;
 	}
-	printf("NCryptOpenStorageProvider Success\n");
 
-	if (FAILED(hr = HRESULT_FROM_NT(NCryptOpenKey(
-		hProv,
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptImportKeyPair(
+		hAlg,
+		NULL,
+		BCRYPT_RSAPUBLIC_BLOB,
 		&hKey,
-		keyName,
-		0,
-		(keyAuthValue != 0) ? NCRYPT_SILENT_FLAG : 0))))
+		pbPubkey,
+		cbPubkey,
+		0))))
 	{
 		goto Cleanup;
 	}
-	printf("NCryptOpenKey Success\n");
-	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
-	{
-		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
-			hKey,
-			NCRYPT_PIN_PROPERTY,
-			(PBYTE)keyAuthValue,
-			(DWORD)((wcsnlen_s(keyAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
-			0))))
-		{
-			goto Cleanup;
-		}
-	}
-	printf("NCryptSetProperty Success\n");
 
-	if (FAILED(hr = HRESULT_FROM_NT(NCryptEncrypt(
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
 		hKey,
 		(PBYTE)decData,
 		(DWORD)((wcsnlen_s(decData, ARG_MAX) + 1) * sizeof(WCHAR)),
 		NULL,
 		NULL,
 		0,
+		NULL,
+		0,
 		(PULONG)&cbBlob,
-		NCRYPT_PAD_PKCS1_FLAG))))
+		BCRYPT_PAD_PKCS1))))
 	{
 		goto Cleanup;
 	}
-	printf("NCryptEncrypt Success\n");
 	if (FAILED(hr = AllocateAndZero((PVOID*)&pbBlob, cbBlob)))
 	{
 		goto Cleanup;
 	}
-	if (FAILED(hr = HRESULT_FROM_NT(NCryptEncrypt(
+	if (FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
 		hKey,
 		(PBYTE)decData,
 		(DWORD)((wcsnlen_s(decData, ARG_MAX) + 1) * sizeof(WCHAR)),
 		NULL,
+		NULL,
+		0,
 		pbBlob,
 		cbBlob,
 		(PULONG)&cbBlob,
-		NCRYPT_PAD_PKCS1_FLAG))))
+		BCRYPT_PAD_PKCS1))))
 	{
 		goto Cleanup;
 	}
-	printf("NCryptEncrypt Success\n");
 
 	if (blobFile != NULL)
 	{
@@ -7748,16 +7885,17 @@ _In_reads_(argc) WCHAR* argv[]
 Cleanup:
 	if (hKey != NULL)
 	{
-		NCryptFreeObject(hKey);
+		BCryptDestroyKey(hKey);
 		hKey = NULL;
 	}
-	if (hProv != NULL)
+	if (hAlg != NULL)
 	{
-		NCryptFreeObject(hProv);
-		hProv = NULL;
+		BCryptCloseAlgorithmProvider(hAlg, 0);
+		hAlg = NULL;
 	}
 	ZeroAndFree((PVOID*)&pbBlob, cbBlob);
-	PcpToolCallResult(L"PcpToolEncryptKey()", hr);
+	ZeroAndFree((PVOID*)&pbPubkey, cbPubkey);
+	PcpToolCallResult(L"PcpToolEncrypt()", hr);
 	return hr;
 }
 
@@ -7856,13 +7994,13 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
+	if ((keyAuthValue != NULL) && (wcslen(keyAuthValue) != 0))
 	{
 		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 			hKey,
 			NCRYPT_PIN_PROPERTY,
 			(PBYTE)keyAuthValue,
-			(DWORD)((wcsnlen_s(keyAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
+			(DWORD)((wcslen(keyAuthValue) + 1) * sizeof(WCHAR)),
 			0))))
 		{
 			goto Cleanup;
@@ -7877,7 +8015,7 @@ _In_reads_(argc) WCHAR* argv[]
 		NULL,
 		0,
 		(PDWORD)&cbSecret,
-		NCRYPT_PAD_PKCS1_FLAG))))
+		BCRYPT_PAD_PKCS1))))
 	{
 		goto Cleanup;
 	}
@@ -7893,13 +8031,13 @@ _In_reads_(argc) WCHAR* argv[]
 		pbSecret,
 		cbSecret,
 		(PDWORD)&cbSecret,
-		NCRYPT_PAD_PKCS1_FLAG))))
+		BCRYPT_PAD_PKCS1))))
 	{
 		goto Cleanup;
 	}
 
 	// Output secret
-	wprintf(L"%s\n", (PWCHAR)pbSecret);
+	wprintf(L"<Secret size=\"%u\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
 
 Cleanup:
 	if (hKey != NULL)
@@ -7929,6 +8067,7 @@ _In_reads_(argc) WCHAR* argv[]
 	NCRYPT_KEY_HANDLE hKey = NULL;
 	PCWSTR keyName = NULL;
 	PCWSTR dataFile = NULL;
+	PCWSTR sigFile = NULL;
 	PCWSTR keyAuthValue = NULL;
 	PBYTE pbData = NULL;
 	UINT32 cbData = 0;
@@ -7952,14 +8091,14 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [data file] {usageAuth}\n",
+		wprintf(L"%s %s [key name] [data file] {usageAuth} {signature file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
 
-	// Mandatory parameter: data
+	// Mandatory parameter: data file
 	if (argc > 3)
 	{
 		dataFile = argv[3];
@@ -7983,10 +8122,11 @@ _In_reads_(argc) WCHAR* argv[]
 		{
 			goto Cleanup;
 		}
+		//printf("%d - %s\n", cbData, pbData);
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [blob file] {usageAuth}\n",
+		wprintf(L"%s %s [key name] [data file] {usageAuth} {signature file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -7999,6 +8139,12 @@ _In_reads_(argc) WCHAR* argv[]
 		keyAuthValue = argv[4];
 	}
 
+	// Optional parameter: signature file
+	if (argc > 5)
+	{
+		sigFile = argv[5];
+	}
+
 	// Open key
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
 		&hProv,
@@ -8007,6 +8153,7 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
+	//printf("NCryptOpenStorageProvider Success\n");
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
 		hProv,
 		&hKey,
@@ -8016,6 +8163,7 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
+	//printf("NCryptOpenKey Success\n");
 	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
 	{
 		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
@@ -8027,6 +8175,7 @@ _In_reads_(argc) WCHAR* argv[]
 		{
 			goto Cleanup;
 		}
+		//printf("NCryptSetProperty Success\n");
 	}
 
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSignHash(
@@ -8037,10 +8186,12 @@ _In_reads_(argc) WCHAR* argv[]
 		NULL,
 		0,
 		(PDWORD)&cbSignature,
-		NCRYPT_PAD_PKCS1_FLAG))))
+		BCRYPT_PAD_PKCS1))))
 	{
 		goto Cleanup;
 	}
+	//printf("NCryptSignHash Success\n");
+
 	if (FAILED(hr = AllocateAndZero((PVOID*)&pbSignature, cbSignature)))
 	{
 		goto Cleanup;
@@ -8053,13 +8204,19 @@ _In_reads_(argc) WCHAR* argv[]
 		pbSignature,
 		cbSignature,
 		(PDWORD)&cbSignature,
-		NCRYPT_PAD_PKCS1_FLAG))))
+		BCRYPT_PAD_PKCS1))))
 	{
 		goto Cleanup;
 	}
+	//printf("NCryptSignHash Success Again\n");
 
-	// Output secret
-	printf("%s", pbSignature);
+	// Output signature
+	if (sigFile) {
+		PcpToolWriteFile(sigFile, pbSignature, cbSignature);
+	}
+	else {
+		printf("%s", pbSignature);
+	}
 
 Cleanup:
 	if (hKey != NULL)
@@ -8074,6 +8231,181 @@ Cleanup:
 	}
 	ZeroAndFree((PVOID*)&pbSignature, cbSignature);
 	PcpToolCallResult(L"PcpToolSign()", hr);
+	return hr;
+}
+
+HRESULT
+PcpToolUnbind(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+{
+	HRESULT hr = S_OK;
+	NCRYPT_PROV_HANDLE hProv = NULL;
+	NCRYPT_KEY_HANDLE hKey = NULL;
+	PCWSTR keyName = NULL;
+	PCWSTR blobFile = NULL;
+	PCWSTR secFile = NULL;
+	PCWSTR keyAuthValue = NULL;
+	PBYTE pbBlob = NULL;
+	UINT32 cbBlob = 0;
+	PBYTE pbSecret = NULL;
+	UINT32 cbSecret = 0;
+
+	// Paranoid check
+	if (argc < 2)
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: key name
+	if (argc > 2)
+	{
+		keyName = argv[2];
+	}
+	else
+	{
+		wprintf(L"%s %s [key name] [blob file] {usageAuth} {secret file}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: blob file
+	if (argc > 3)
+	{
+		blobFile = argv[3];
+		if (FAILED(hr = PcpToolReadFile(
+			blobFile,
+			NULL,
+			0,
+			&cbBlob)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = AllocateAndZero((PVOID*)&pbBlob, cbBlob)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = PcpToolReadFile(
+			blobFile,
+			pbBlob,
+			cbBlob,
+			&cbBlob)))
+		{
+			goto Cleanup;
+		}
+		//printf("%d - %s\n", cbBlob, pbBlob);
+	}
+	else
+	{
+		wprintf(L"%s %s [key name] [blob file] {usageAuth} {secret file}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Optional parameter: key auth
+	if (argc > 4)
+	{
+		keyAuthValue = argv[4];
+	}
+
+	// Optional parameter: secret file
+	if (argc > 5)
+	{
+		secFile = argv[5];
+	}
+
+	// Open key
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
+		&hProv,
+		MS_PLATFORM_CRYPTO_PROVIDER,
+		0))))
+	{
+		goto Cleanup;
+	}
+	//printf("NCryptOpenStorageProvider Success\n");
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
+		hProv,
+		&hKey,
+		keyName,
+		0,
+		(keyAuthValue != 0) ? NCRYPT_SILENT_FLAG : 0))))
+	{
+		goto Cleanup;
+	}
+	//printf("NCryptOpenKey Success\n");
+	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
+	{
+		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+			hKey,
+			NCRYPT_PIN_PROPERTY,
+			(PBYTE)keyAuthValue,
+			(DWORD)((wcsnlen_s(keyAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
+			0))))
+		{
+			goto Cleanup;
+		}
+		//printf("NCryptSetProperty Success\n");
+	}
+
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptDecrypt(
+		hKey,
+		pbBlob,
+		cbBlob,
+		NULL,
+		NULL,
+		0,
+		(PDWORD)&cbSecret,
+		BCRYPT_PAD_PKCS1))))
+	{
+		goto Cleanup;
+	}
+	//printf("NCryptDecrypt Success\n");
+	if (FAILED(hr = AllocateAndZero((PVOID*)&pbSecret, cbSecret)))
+	{
+		goto Cleanup;
+	}
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptDecrypt(
+		hKey,
+		pbBlob,
+		cbBlob,
+		NULL,
+		pbSecret,
+		cbSecret,
+		(PDWORD)&cbSecret,
+		BCRYPT_PAD_PKCS1))))
+	{
+		goto Cleanup;
+	}
+	//printf("NCryptDecrypt Success Again\n");
+
+	// Output secret
+	if (secFile) {
+		PcpToolWriteFile(secFile, pbSecret, cbSecret);
+	}
+	else {
+		printf("%s", pbSecret);
+	}
+
+Cleanup:
+	if (hKey != NULL)
+	{
+		NCryptFreeObject(hKey);
+		hKey = NULL;
+	}
+	if (hProv != NULL)
+	{
+		NCryptFreeObject(hProv);
+		hProv = NULL;
+	}
+	ZeroAndFree((PVOID*)&pbBlob, cbBlob);
+	ZeroAndFree((PVOID*)&pbSecret, cbSecret);
+	PcpToolCallResult(L"PcpToolUnbind()", hr);
 	return hr;
 }
 

@@ -252,6 +252,14 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolGetPubKey(argc, argv);
         }
+		else if (!_wcsicmp(command, L"getpvtkey"))
+		{
+			hr = PcpToolGetPvtKey(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"getfullkey"))
+		{
+			hr = PcpToolGetFullKey(argc, argv);
+		}
         else if(!_wcsicmp(command, L"getplatformcounters"))
         {
             hr = PcpToolGetPlatformCounters(argc, argv);
@@ -304,10 +312,6 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolEncrypt(argc, argv);
         }
-		else if (!_wcsicmp(command, L"encryptkey"))
-		{
-			hr = PcpToolEncryptKey(argc, argv);
-		}
 		else if (!_wcsicmp(command, L"decrypt"))
         {
             hr = PcpToolDecrypt(argc, argv);
@@ -315,6 +319,10 @@ int __cdecl wmain(_In_ int argc,
 		else if (!_wcsicmp(command, L"sign"))
 		{
 			hr = PcpToolSign(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"unbind"))
+		{
+			hr = PcpToolUnbind(argc, argv);
 		}
         else if(!_wcsicmp(command, L"wrapkey"))
         {
