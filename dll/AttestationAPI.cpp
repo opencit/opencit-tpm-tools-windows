@@ -3758,7 +3758,11 @@ DllExport HRESULT TpmPCRExtend(
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
-		//Not implemented yet
+		if (FAILED(hr = pcrExtend20(hPlatformTbsHandle, pcrIndex, pbDigest, pbNewDigest)))
+		{
+			goto Cleanup;
+		}
+		wprintf(L"TPM pcrExtend20 returned successfully!\n");
 	}
 	else
 	{

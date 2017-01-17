@@ -444,6 +444,13 @@ HRESULT NvInfo20(
 	_Inout_ PUINT32 nvPublicSize
 );
 
+HRESULT pcrExtend20(
+	TBS_HCONTEXT hPlatformTbsHandle,
+	UINT32 pcrIndex,
+	_In_ PBYTE pbDigest,
+	_Out_ PBYTE pbNewDigest
+);
+
 #if defined(__cplusplus)
 }
 #endif
