@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-#define tpmtools_exe "\"C:\\Program Files (x86)\\Intel\\TrustAgent\\bin\\TPMTool.exe\""
+#include <windows.h>
+#include <shlwapi.h>
 
 int main(int argc, char** argv) {
     int     i, exitCode = -1;
@@ -26,11 +26,17 @@ int main(int argc, char** argv) {
         }
     }
 
+	char path[MAX_PATH];//always use MAX_PATH for filepaths
+	char tpmtools[MAX_PATH];//always use MAX_PATH for filepaths
+	GetModuleFileName(NULL,path,sizeof(path));
+	PathRemoveFileSpec(path);
+	sprintf_s(tpmtools,sizeof(tpmtools),"%s\\%s", path, "TPMTool.exe");
+
 	output_file = (output_file == NULL) ? "" : output_file;
-	sprintf_s(command0,sizeof(command0),tpmtools_exe" importaik %s %s", blob_file, key_name);
+	sprintf_s(command0,sizeof(command0),"\"%s\" importaik %s %s", tpmtools, blob_file, key_name);
 	i = system(command0);
 	if ( i == 0 ) {
-		sprintf_s(command0,sizeof(command0),tpmtools_exe" sign %s %s %s %s", key_name, input_file, key_auth, output_file);
+		sprintf_s(command0,sizeof(command0),"\"%s\" sign %s %s %s %s", tpmtools, key_name, input_file, key_auth, output_file);
 		i = system(command0);
 		if ( i == 0 )
 			exitCode = 0;

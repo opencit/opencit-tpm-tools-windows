@@ -29,7 +29,7 @@ GOTO:EOF
 :tpm_signdata_build
   echo. Building tpm_signdata....
   cd
-  cl tpm_signdata.c
+  cl tpm_signdata.c /link shlwapi.lib
   IF NOT %ERRORLEVEL% EQU 0 (
     echo. %me%: tpm_signdata build failed
 	call:ExitBatch
@@ -40,7 +40,7 @@ GOTO:EOF
 :tpm_unbindaeskey_build
   echo. Building tpm_unbindaeskey....
   cd
-  cl tpm_unbindaeskey.c
+  cl tpm_unbindaeskey.c /link shlwapi.lib
   IF NOT %ERRORLEVEL% EQU 0 (
     echo. %me%: tpm_unbindaeskey build failed
 	call:ExitBatch
