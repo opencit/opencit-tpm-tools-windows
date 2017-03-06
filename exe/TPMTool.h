@@ -335,6 +335,12 @@ PcpToolImportKey(
     );
 
 HRESULT
+PcpToolImportKeybyOpaque(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+);
+
+HRESULT
 PcpToolExportKey(
     int argc,
     _In_reads_(argc) WCHAR* argv[]

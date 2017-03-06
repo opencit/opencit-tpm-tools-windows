@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 	sprintf_s(tpmtools,sizeof(tpmtools),"%s\\%s", path, "TPMTool.exe");
 
 	output_file = (output_file == NULL) ? "" : output_file;
-	sprintf_s(command0,sizeof(command0),"\"%s\" importaik %s %s", tpmtools, blob_file, key_name);
+	sprintf_s(command0,sizeof(command0),"\"%s\" importkeybyopaque %s %s", tpmtools, blob_file, key_name);
 	i = system(command0);
 	if ( i == 0 ) {
 		sprintf_s(command0,sizeof(command0),"\"%s\" sign %s %s %s %s", tpmtools, key_name, input_file, key_auth, output_file);
