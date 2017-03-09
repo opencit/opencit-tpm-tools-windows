@@ -53,13 +53,15 @@ PcpToolGetHelp(
 	wprintf(L" CreateSigningKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
 	wprintf(L" CreateBindingKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
     wprintf(L" ImportKey [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
+	wprintf(L" ImportKeybyOpaqueBlob [opaque blob] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
     wprintf(L" ExportKey [key name] [migrationAuth] {key file}\n");
     wprintf(L" ChangeKeyUsageAuth [key name] [usageAuth] [newUsageAuth]\n");
     wprintf(L" DeleteKey [key name]\n");
     wprintf(L" GetPubKey [key name] {key File}\n");
     wprintf(L" Encrypt [pubkey file] [data] {blob file}\n");
     wprintf(L" Decrypt [key name] [blob file] {usageAuth}\n");
-	wprintf(L" Sign [key name] [data] {usageAuth}\n");
+	wprintf(L" Sign [key name] [data file] {usageAuth} {signature file}\n");
+	wprintf(L" Unbind [key name] [blob file] {usageAuth} {secret file}\n");
 
     wprintf(L"\nAIK Management:\n");
     wprintf(L" CreateAIK [key name] {idBinding file} {nonce} {usageAuth | @ | ! }\n");
@@ -208,7 +210,11 @@ int __cdecl wmain(_In_ int argc,
         {
             hr = PcpToolImportKey(argc, argv);
         }
-        else if(!_wcsicmp(command, L"exportkey"))
+		else if (!_wcsicmp(command, L"importkeybyopaque"))
+		{
+			hr = PcpToolImportKeybyOpaque(argc, argv);
+		}
+		else if (!_wcsicmp(command, L"exportkey"))
         {
             hr = PcpToolExportKey(argc, argv);
         }

@@ -1841,7 +1841,10 @@ int argc,
 _In_reads_(argc) WCHAR* argv[]
 )
 /*++
-This function will create a key on the KSP. Optionally it may be created with a
+This function will create a signing key on the KSP. Change from the CreateKey function is the
+1. Key Usage: NCRYPT_PCP_SIGNATURE_KEY
+2. Export Opaque key blob: required for importing this key later
+Optionally it may be created with a
 usageAuth value and a migrationAuth
 --*/
 {
@@ -1954,7 +1957,7 @@ usageAuth value and a migrationAuth
 		}
 	}
 
-	// Create the key
+	// Open the Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
 		&hProv,
 		MS_PLATFORM_CRYPTO_PROVIDER,
@@ -1963,6 +1966,7 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
+	// Create key using above Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptCreatePersistedKey(
 		hProv,
 		&hKey,
@@ -1978,6 +1982,7 @@ usageAuth value and a migrationAuth
 	{
 		if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
 		{
+			// Set the UsageAuth for key
 			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 				hKey,
 				NCRYPT_PIN_PROPERTY,
@@ -2002,6 +2007,7 @@ usageAuth value and a migrationAuth
 		}
 	}
 
+	// Set Key Usage as NCRYPT_PCP_SIGNATURE_KEY
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 		hKey,
 		NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY,
@@ -2055,6 +2061,7 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
+	// Export Public key blob
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(hKey,
 		NULL,
 		BCRYPT_RSAPUBLIC_BLOB,
@@ -2067,13 +2074,13 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
-	// Output results
+	// Output Public key blob
 	if (FAILED(hr = PcpToolDisplayKey(keyName, pbKeyPub, cbKeyPub, 0)))
 	{
 		goto Cleanup;
 	}
 
-	//export the opaque key blob
+	// Export Opaque key blob
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
 		hKey,
 		NULL,
@@ -2102,7 +2109,8 @@ usageAuth value and a migrationAuth
 	{
 		goto Cleanup;
 	}
-	/* output signing key opaque key blob*/
+
+	// Output Opaque key blob
 	for (UINT32 n = 0; n < cbKey; n++)
 	{
 		wprintf(L"%02x", pbKey[n]);
@@ -2112,11 +2120,13 @@ usageAuth value and a migrationAuth
 Cleanup:
 	if (hKey != NULL)
 	{
+		// Release Key handle
 		NCryptFreeObject(hKey);
 		hKey = NULL;
 	}
 	if (hProv != NULL)
 	{
+		// Release Storage Provider handle
 		NCryptFreeObject(hProv);
 		hProv = NULL;
 	}
@@ -2131,7 +2141,10 @@ int argc,
 _In_reads_(argc) WCHAR* argv[]
 )
 /*++
-This function will create a key on the KSP. Optionally it may be created with a
+This function will create a binding key on the KSP. Change from the CreateKey function is the
+1. Key Usage: NCRYPT_PCP_ENCRYPTION_KEY
+2. Export Opaque key blob: required for importing this key later
+Optionally it may be created with a
 usageAuth value and a migrationAuth
 --*/
 {
@@ -2244,7 +2257,7 @@ usageAuth value and a migrationAuth
 		}
 	}
 
-	// Create the key
+	// Open the Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
 		&hProv,
 		MS_PLATFORM_CRYPTO_PROVIDER,
@@ -2253,6 +2266,7 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
+	// Create key using above Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptCreatePersistedKey(
 		hProv,
 		&hKey,
@@ -2268,6 +2282,7 @@ usageAuth value and a migrationAuth
 	{
 		if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
 		{
+			// Set the UsageAuth for key
 			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 				hKey,
 				NCRYPT_PIN_PROPERTY,
@@ -2292,6 +2307,7 @@ usageAuth value and a migrationAuth
 		}
 	}
 
+	// Set Key Usage as NCRYPT_PCP_ENCRYPTION_KEY
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 		hKey,
 		NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY,
@@ -2345,6 +2361,7 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
+	// Export Public key blob
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(hKey,
 		NULL,
 		BCRYPT_RSAPUBLIC_BLOB,
@@ -2357,13 +2374,13 @@ usageAuth value and a migrationAuth
 		goto Cleanup;
 	}
 
-	// Output results
+	// Output Public key blob
 	if (FAILED(hr = PcpToolDisplayKey(keyName, pbKeyPub, cbKeyPub, 0)))
 	{
 		goto Cleanup;
 	}
 
-	//export the opaque key blob
+	// Export Opaque key blob
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
 		hKey,
 		NULL,
@@ -2392,7 +2409,8 @@ usageAuth value and a migrationAuth
 	{
 		goto Cleanup;
 	}
-	/* output binding key opaque key blob*/
+
+	// Output Opaque key blob
 	for (UINT32 n = 0; n < cbKey; n++)
 	{
 		wprintf(L"%02x", pbKey[n]);
@@ -2402,11 +2420,13 @@ usageAuth value and a migrationAuth
 Cleanup:
 	if (hKey != NULL)
 	{
+		// Release Key handle
 		NCryptFreeObject(hKey);
 		hKey = NULL;
 	}
 	if (hProv != NULL)
 	{
+		// Release Storage Provider handle
 		NCryptFreeObject(hProv);
 		hProv = NULL;
 	}
@@ -5084,6 +5104,223 @@ Cleanup:
     ZeroAndFree((PVOID*)&pbKey, cbKey);
     PcpToolCallResult(L"PcpToolImportKey()", hr);
     return hr;
+}
+
+HRESULT
+PcpToolImportKeybyOpaque(
+int argc,
+_In_reads_(argc) WCHAR* argv[]
+)
+/*++
+This function will import a key on the KSP. Change from the importKey function is the
+1. key type: BCRYPT_OPAQUE_KEY_BLOB
+2. the input parameter is in hex.
+Optionally it may be imported with a
+usageAuth value and a migrationAuth
+--*/
+{
+	HRESULT hr = S_OK;
+	NCRYPT_PROV_HANDLE hProv = NULL;
+	NCRYPT_KEY_HANDLE hKey = NULL;
+	PCWSTR blobFile = NULL;
+	PCWSTR keyName = NULL;
+	PCWSTR usageAuth = NULL;
+	PCWSTR migrationAuth = NULL;
+	PBYTE pbKey = NULL;
+	UINT32 cbKey = 0;
+	DWORD importFlags = NCRYPT_OVERWRITE_KEY_FLAG;
+	NCryptBuffer keyImportParameters[] =
+	{ { 0,
+	NCRYPTBUFFER_PKCS_KEY_NAME,
+	NULL },
+	{ sizeof(BCRYPT_RSA_ALGORITHM),
+	NCRYPTBUFFER_PKCS_ALG_ID,
+	(PVOID)BCRYPT_RSA_ALGORITHM } };
+	NCryptBufferDesc parameterList = { NCRYPTBUFFER_VERSION,
+		2,
+		keyImportParameters };
+	BOOLEAN tUIRequested = false;
+	LPCWSTR optionalPIN = L"This key requires usage consent and an optional PIN.";
+	LPCWSTR mandatoryPIN = L"This key has a mandatory PIN.";
+	NCRYPT_UI_POLICY rgbUiPolicy = { 1, 0, L"PCPTool", NULL, NULL };
+
+	// Paranoid check
+	if (argc < 2)
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Key File
+	if (argc > 2)
+	{
+		blobFile = argv[2];
+
+		if (FAILED(hr = PcpToolReadFile(blobFile, NULL, 0, &cbKey)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = AllocateAndZero((PVOID*)&pbKey, cbKey)))
+		{
+			goto Cleanup;
+		}
+		if (FAILED(hr = PcpToolReadFile(
+			blobFile,
+			pbKey,
+			cbKey,
+			&cbKey)))
+		{
+			goto Cleanup;
+		}
+	}
+	else
+	{
+		wprintf(L"%s %s [opaque blob] [key name] {usageAuth} {migrationAuth}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Mandatory parameter: Key Name
+	if (argc > 3)
+	{
+		keyName = argv[3];
+	}
+	else
+	{
+		wprintf(L"%s %s [opaque blob] [key name] {usageAuth} {migrationAuth}\n",
+			argv[0],
+			argv[1]);
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
+
+	// Optional parameter: usageAuth
+	if (argc > 4)
+	{
+		usageAuth = argv[4];
+		importFlags |= NCRYPT_DO_NOT_FINALIZE_FLAG;
+		if (!wcscmp(usageAuth, L"@"))
+		{
+			// Caller requested UI
+			usageAuth = NULL;
+			tUIRequested = TRUE;
+			rgbUiPolicy.pszFriendlyName = keyName;
+			rgbUiPolicy.dwFlags = NCRYPT_UI_PROTECT_KEY_FLAG;
+			rgbUiPolicy.pszDescription = optionalPIN;
+		}
+		else if (!wcscmp(usageAuth, L"!"))
+		{
+			// Caller requested UI
+			usageAuth = NULL;
+			tUIRequested = TRUE;
+			rgbUiPolicy.pszFriendlyName = keyName;
+			rgbUiPolicy.dwFlags = NCRYPT_UI_FORCE_HIGH_PROTECTION_FLAG;
+			rgbUiPolicy.pszDescription = mandatoryPIN;
+		}
+	}
+
+	// Optional parameter: migrationAuth
+	if (argc > 5)
+	{
+		migrationAuth = argv[5];
+		importFlags |= NCRYPT_DO_NOT_FINALIZE_FLAG;
+	}
+
+	// Open the Storage Provider
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
+		&hProv,
+		MS_PLATFORM_CRYPTO_PROVIDER,
+		0))))
+	{
+		goto Cleanup;
+	}
+
+	keyImportParameters[0].cbBuffer = (ULONG)((wcsnlen_s(keyName, ARG_MAX) + 1) * sizeof(WCHAR));
+	keyImportParameters[0].BufferType = NCRYPTBUFFER_PKCS_KEY_NAME;
+	keyImportParameters[0].pvBuffer = (PVOID)keyName;
+
+	// Import key using Opaque blob
+	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptImportKey(
+		hProv,
+		NULL,
+		BCRYPT_OPAQUE_KEY_BLOB,
+		&parameterList,
+		&hKey,
+		pbKey,
+		cbKey,
+		importFlags))))
+	{
+		goto Cleanup;
+	}
+
+	if ((importFlags & NCRYPT_DO_NOT_FINALIZE_FLAG) != NULL)
+	{
+		if (tUIRequested == FALSE)
+		{
+			if ((usageAuth != NULL) && (wcsnlen_s(usageAuth, ARG_MAX) != 0))
+			{
+				// Set the UsageAuth for key
+				if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+					hKey,
+					NCRYPT_PIN_PROPERTY,
+					(PBYTE)usageAuth,
+					(DWORD)((wcsnlen_s(usageAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
+					0))))
+				{
+					goto Cleanup;
+				}
+			}
+		}
+		else
+		{
+			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+				hKey,
+				NCRYPT_UI_POLICY_PROPERTY,
+				(PBYTE)&rgbUiPolicy,
+				sizeof(NCRYPT_UI_POLICY),
+				0))))
+			{
+				goto Cleanup;
+			}
+		}
+
+		if (migrationAuth != NULL)
+		{
+			if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
+				hKey,
+				NCRYPT_PCP_MIGRATIONPASSWORD_PROPERTY,
+				(PBYTE)migrationAuth,
+				(DWORD)((wcsnlen_s(migrationAuth, ARG_MAX) + 1) * sizeof(WCHAR)),
+				0))))
+			{
+				goto Cleanup;
+			}
+		}
+
+		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptFinalizeKey(hKey, 0))))
+		{
+			goto Cleanup;
+		}
+	}
+
+Cleanup:
+	if (hKey != NULL)
+	{
+		// Release Key handle
+		NCryptFreeObject(hKey);
+		hKey = NULL;
+	}
+	if (hProv != NULL)
+	{
+		// Release Storage Provider handle
+		NCryptFreeObject(hProv);
+		hProv = NULL;
+	}
+	ZeroAndFree((PVOID*)&pbKey, cbKey);
+	PcpToolCallResult(L"PcpToolImportKeybyOpaque()", hr);
+	return hr;
 }
 
 HRESULT
@@ -8061,6 +8298,10 @@ PcpToolSign(
 int argc,
 _In_reads_(argc) WCHAR* argv[]
 )
+/*++
+This function will sign the hashed data using signing key. Optionally it may write the
+signature to a file if provided.
+--*/
 {
 	HRESULT hr = S_OK;
 	NCRYPT_PROV_HANDLE hProv = NULL;
@@ -8075,6 +8316,7 @@ _In_reads_(argc) WCHAR* argv[]
 	UINT32 cbSignature = 0;
 
 	BCRYPT_PKCS1_PADDING_INFO paddingInfo;
+	// Algorithm to be used for Signing
 	paddingInfo.pszAlgId = BCRYPT_SHA1_ALGORITHM;
 
 	// Paranoid check
@@ -8122,7 +8364,6 @@ _In_reads_(argc) WCHAR* argv[]
 		{
 			goto Cleanup;
 		}
-		//printf("%d - %s\n", cbData, pbData);
 	}
 	else
 	{
@@ -8145,7 +8386,7 @@ _In_reads_(argc) WCHAR* argv[]
 		sigFile = argv[5];
 	}
 
-	// Open key
+	// Open the Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
 		&hProv,
 		MS_PLATFORM_CRYPTO_PROVIDER,
@@ -8153,7 +8394,7 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptOpenStorageProvider Success\n");
+	// Open signing key using above Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
 		hProv,
 		&hKey,
@@ -8163,9 +8404,9 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptOpenKey Success\n");
 	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
 	{
+		// Set the UsageAuth for key
 		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 			hKey,
 			NCRYPT_PIN_PROPERTY,
@@ -8175,9 +8416,9 @@ _In_reads_(argc) WCHAR* argv[]
 		{
 			goto Cleanup;
 		}
-		//printf("NCryptSetProperty Success\n");
 	}
 
+	// Generate signature for hashed data
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSignHash(
 		hKey,
 		&paddingInfo,
@@ -8186,12 +8427,10 @@ _In_reads_(argc) WCHAR* argv[]
 		NULL,
 		0,
 		(PDWORD)&cbSignature,
-		BCRYPT_PAD_PKCS1))))
+		BCRYPT_PAD_PKCS1))))	// Windows only supports PKCS1 padding
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptSignHash Success\n");
-
 	if (FAILED(hr = AllocateAndZero((PVOID*)&pbSignature, cbSignature)))
 	{
 		goto Cleanup;
@@ -8208,8 +8447,7 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptSignHash Success Again\n");
-
+	
 	// Output signature
 	if (sigFile) {
 		PcpToolWriteFile(sigFile, pbSignature, cbSignature);
@@ -8221,11 +8459,13 @@ _In_reads_(argc) WCHAR* argv[]
 Cleanup:
 	if (hKey != NULL)
 	{
+		// Release Key handle
 		NCryptFreeObject(hKey);
 		hKey = NULL;
 	}
 	if (hProv != NULL)
 	{
+		// Release Storage Provider handle
 		NCryptFreeObject(hProv);
 		hProv = NULL;
 	}
@@ -8239,6 +8479,10 @@ PcpToolUnbind(
 int argc,
 _In_reads_(argc) WCHAR* argv[]
 )
+/*++
+This function will decrypt the encrypted blob using binding key. Optionally it may write the
+decrypted data to a file if provided.
+--*/
 {
 	HRESULT hr = S_OK;
 	NCRYPT_PROV_HANDLE hProv = NULL;
@@ -8297,7 +8541,6 @@ _In_reads_(argc) WCHAR* argv[]
 		{
 			goto Cleanup;
 		}
-		//printf("%d - %s\n", cbBlob, pbBlob);
 	}
 	else
 	{
@@ -8320,7 +8563,7 @@ _In_reads_(argc) WCHAR* argv[]
 		secFile = argv[5];
 	}
 
-	// Open key
+	// Open the Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
 		&hProv,
 		MS_PLATFORM_CRYPTO_PROVIDER,
@@ -8328,7 +8571,7 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptOpenStorageProvider Success\n");
+	// Open key using above Storage Provider
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenKey(
 		hProv,
 		&hKey,
@@ -8338,9 +8581,9 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptOpenKey Success\n");
 	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
 	{
+		// Set the UsageAuth for key
 		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 			hKey,
 			NCRYPT_PIN_PROPERTY,
@@ -8350,9 +8593,9 @@ _In_reads_(argc) WCHAR* argv[]
 		{
 			goto Cleanup;
 		}
-		//printf("NCryptSetProperty Success\n");
 	}
 
+	// Decrypt the encrypted blob
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptDecrypt(
 		hKey,
 		pbBlob,
@@ -8361,11 +8604,10 @@ _In_reads_(argc) WCHAR* argv[]
 		NULL,
 		0,
 		(PDWORD)&cbSecret,
-		BCRYPT_PAD_PKCS1))))
+		BCRYPT_PAD_PKCS1))))	// Windows only supports PKCS1 padding
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptDecrypt Success\n");
 	if (FAILED(hr = AllocateAndZero((PVOID*)&pbSecret, cbSecret)))
 	{
 		goto Cleanup;
@@ -8382,8 +8624,7 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	//printf("NCryptDecrypt Success Again\n");
-
+	
 	// Output secret
 	if (secFile) {
 		PcpToolWriteFile(secFile, pbSecret, cbSecret);
@@ -8395,11 +8636,13 @@ _In_reads_(argc) WCHAR* argv[]
 Cleanup:
 	if (hKey != NULL)
 	{
+		// Release Key handle
 		NCryptFreeObject(hKey);
 		hKey = NULL;
 	}
 	if (hProv != NULL)
 	{
+		// Release Storage Provider handle
 		NCryptFreeObject(hProv);
 		hProv = NULL;
 	}
