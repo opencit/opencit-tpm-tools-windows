@@ -1841,114 +1841,114 @@ DllExport HRESULT TpmAttCreateAttestationfromLog(
         hr = E_INVALIDARG;
         goto Cleanup;
     }
-    if(pbQuote != NULL){
-        // Is Quote recognized?
-        if((memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) != 0) &&
-        (memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) != 0))
-        {
-            hr = E_INVALIDARG;
-            goto Cleanup;
-        }
-    }
+	if (pbQuote != NULL){
+		// Is Quote recognized?
+		if ((memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) != 0) &&
+			(memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) != 0))
+		{
+			hr = E_INVALIDARG;
+			goto Cleanup;
+		}
 
-    // Filter Log for relevant entries. The tpm driver uses the pcrMask = 0x0000F77f
-    if(FAILED(hr = TpmAttiFilterLog(pbLog,
-                                    cbLog,
-                                    0x0000F77f, //pcrmask used by driver
-                                    NULL,
-                                    0,
-                                    &cbFilteredLog)))
-    {
-        goto Cleanup;
-    }
+		// Filter Log for relevant entries. The tpm driver uses the pcrMask = 0x0000F77f
+		if (FAILED(hr = TpmAttiFilterLog(pbLog,
+			cbLog,
+			0x0000F77f, //pcrmask used by driver
+			NULL,
+			0,
+			&cbFilteredLog)))
+		{
+			goto Cleanup;
+		}
 
-    cbRequired = sizeof(PCP_PLATFORM_ATTESTATION_BLOB) +
-                 SHA1_DIGEST_SIZE * AVAILABLE_PLATFORM_PCRS +
-                 cbQuote +
-                 cbSig +
-                 cbFilteredLog;
+		cbRequired = sizeof(PCP_PLATFORM_ATTESTATION_BLOB) +
+			SHA1_DIGEST_SIZE * AVAILABLE_PLATFORM_PCRS +
+			cbQuote +
+			cbSig +
+			cbFilteredLog;
 
-    if((pbOutput == NULL) || (cbOutput == 0))
-    {
-        *pcbResult = cbRequired;
-        goto Cleanup;
-    }
-    if(cbOutput < cbRequired)
-    {
-        hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
-        *pcbResult = cbRequired;
-        goto Cleanup;
-    }
+		if ((pbOutput == NULL) || (cbOutput == 0))
+		{
+			*pcbResult = cbRequired;
+			goto Cleanup;
+		}
+		if (cbOutput < cbRequired)
+		{
+			hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+			*pcbResult = cbRequired;
+			goto Cleanup;
+		}
 
-    pAttestation->Magic = PCP_PLATFORM_ATTESTATION_MAGIC;
-    if(memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) == 0)
-    {
-        pAttestation->Platform = TPM_VERSION_12;
-    }
-    else if(memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) == 0)
-    {
-        pAttestation->Platform = TPM_VERSION_20;
-    }
-    pAttestation->HeaderSize = sizeof(PCP_PLATFORM_ATTESTATION_BLOB);
-    pAttestation->cbPcrValues = AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
-    pAttestation->cbQuote = cbQuote;
-    pAttestation->cbSignature = cbSig;
-    pAttestation->cbLog = cbFilteredLog;
-    cursor = pAttestation->HeaderSize;
+		pAttestation->Magic = PCP_PLATFORM_ATTESTATION_MAGIC;
+		if (memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) == 0)
+		{
+			pAttestation->Platform = TPM_VERSION_12;
+		}
+		else if (memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) == 0)
+		{
+			pAttestation->Platform = TPM_VERSION_20;
+		}
+		pAttestation->HeaderSize = sizeof(PCP_PLATFORM_ATTESTATION_BLOB);
+		pAttestation->cbPcrValues = AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
+		pAttestation->cbQuote = cbQuote;
+		pAttestation->cbSignature = cbSig;
+		pAttestation->cbLog = cbFilteredLog;
+		cursor = pAttestation->HeaderSize;
 
-    // Skip over PCR list in the log for now. We will fill this in after we have filtered the log
-    cursor += AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
+		// Skip over PCR list in the log for now. We will fill this in after we have filtered the log
+		cursor += AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
 
-    // Copy quote
-    if(memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbQuote, cbQuote))
-    {
-        hr = E_FAIL;
-        goto Cleanup;
-    }
-    cursor += cbQuote;
+		// Copy quote
+		if (memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbQuote, cbQuote))
+		{
+			hr = E_FAIL;
+			goto Cleanup;
+		}
+		cursor += cbQuote;
 
-    // Copy signature
-    if(memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbSig, cbSig))
-    {
-        hr = E_FAIL;
-        goto Cleanup;
-    }
-    cursor += cbSig;
+		// Copy signature
+		if (memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbSig, cbSig))
+		{
+			hr = E_FAIL;
+			goto Cleanup;
+		}
+		cursor += cbSig;
 
-    // Filter log
-    if(FAILED(hr = TpmAttiFilterLog(pbLog,
-                                    cbLog,
-                                    0x0000F77f, //pcrmask used by driver
-                                    &pbOutput[cursor],
-                                    cbFilteredLog,
-                                    &cbFilteredLog)))
-    {
-        goto Cleanup;
-    }
+		// Filter log
+		if (FAILED(hr = TpmAttiFilterLog(pbLog,
+			cbLog,
+			0x0000F77f, //pcrmask used by driver
+			&pbOutput[cursor],
+			cbFilteredLog,
+			&cbFilteredLog)))
+		{
+			goto Cleanup;
+		}
 
-    // Generate PCR list from the filtered log
-    if(FAILED(hr = TpmAttiComputeSoftPCRs(&pbOutput[cursor],
-                                          cbFilteredLog,
-                                          &pbOutput[pAttestation->HeaderSize],
-                                          NULL)))
-    {
-        goto Cleanup;
-    }
-    cursor += cbFilteredLog;
+		// Generate PCR list from the filtered log
+		if (FAILED(hr = TpmAttiComputeSoftPCRs(&pbOutput[cursor],
+			cbFilteredLog,
+			&pbOutput[pAttestation->HeaderSize],
+			NULL)))
+		{
+			goto Cleanup;
+		}
+		cursor += cbFilteredLog;
 
-    // Return finalized attestation blob size
-    *pcbResult = cursor;
+		// Return finalized attestation blob size
+		*pcbResult = cursor;
 
-    // Return the AIK name, used for the Quote, if requested
-    if(pszAikName != NULL)
-    {
-        *pszAikName = szAikNameInternal;
-    }
+		// Return the AIK name, used for the Quote, if requested
+		if (pszAikName != NULL)
+		{
+			*pszAikName = szAikNameInternal;
+		}
 
-    if(pbAikPubDigest != NULL)
-    {
-		memcpy_s(pbAikPubDigest, SHA1_DIGEST_SIZE, pbAikPubDig, min(SHA1_DIGEST_SIZE, cbAikPubDig));
-    }
+		if (pbAikPubDigest != NULL)
+		{
+			memcpy_s(pbAikPubDigest, SHA1_DIGEST_SIZE, pbAikPubDig, min(SHA1_DIGEST_SIZE, cbAikPubDig));
+		}
+	}
 
 Cleanup:
     if(pbQuote != NULL)

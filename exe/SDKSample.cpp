@@ -3698,7 +3698,7 @@ that encrypts a certificate for the AIK for example.
     }
 
     // Store the activation if required
-    if(idBindingFile != NULL)
+    if(activationBlobFile != NULL)
     {
         if(FAILED(hr = PcpToolWriteFile(
                                 activationBlobFile,
@@ -10177,7 +10177,7 @@ that encrypts the certificate for the AIK.
     }
 
     // Store the activation and cert if required
-    if(idBindingFile != NULL)
+    if(activationBlobFile != NULL)
     {
         if(FAILED(hr = PcpToolWriteFile(
                                 activationBlobFile,
