@@ -3399,7 +3399,7 @@ DllExport HRESULT TpmNVInfo(
 		goto Cleanup;
 	}
 
-	//wprintf(L" Platform TBS Handle opened successfully\n");
+	//wprintf_s(L" Platform TBS Handle opened successfully\n");
 
 	//dispatch based on TPM version
 	if (tpmVersion == TPM_VERSION_12)
@@ -3409,8 +3409,8 @@ DllExport HRESULT TpmNVInfo(
 		{
 			goto Cleanup;
 		}
-		//wprintf(L" GetCapability12 returns successfully\n");
-		//wprintf(L" Return size is: %d\n", *pcbResult);
+		//wprintf_s(L" GetCapability12 returns successfully\n");
+		//wprintf_s(L" Return size is: %d\n", *pcbResult);
 
 		UINT32 cursor = 0;
 		for (int i = 0; i < *pcbResult / sizeof(UINT32); i++) {
@@ -3418,11 +3418,11 @@ DllExport HRESULT TpmNVInfo(
 			ReadBigEndian(pbOutput, *pcbResult, &cursor, &nvi);
 			if (nvIndex == nvi || list_only==1) {
 				indexFound = 1;
-				wprintf(L"NVRAM index defined	: 0x%08x (%d)\n", nvi, nvi);
+				wprintf_s(L"NVRAM index defined	: 0x%08x (%d)\n", nvi, nvi);
 			}
 		}
 		if (nvIndex>0 && indexFound == 0) {
-			wprintf(L"index 0x%08x not defined\n", nvIndex);
+			wprintf_s(L"index 0x%08x not defined\n", nvIndex);
 		}
 		// 0x00000011 TPM_CAP_NV_INDEX - to get the TPM_NV_DATA_PUBLIC info of the index
 
@@ -3439,9 +3439,9 @@ DllExport HRESULT TpmNVInfo(
 		else
 		{
 			if(nvInfoSize != 0)
-				wprintf(L"NVRAM index defined	: 0x%08x (%d)\n", nvIndex, nvIndex);
+				wprintf_s(L"NVRAM index defined	: 0x%08x (%d)\n", nvIndex, nvIndex);
 			else 
-				wprintf(L"index 0x%08x not defined\n", nvIndex);
+				wprintf_s(L"index 0x%08x not defined\n", nvIndex);
 		}
 	}
 	else
@@ -3552,11 +3552,11 @@ DllExport HRESULT TpmNVDefineSpace(
 		goto Cleanup;
 	}
 	/* Debug
-	wprintf(L" ownerauth read by calling Tbsi_Get_OwnerAuth: ", cbOwnerAuth);
+	wprintf_s(L" ownerauth read by calling Tbsi_Get_OwnerAuth: ", cbOwnerAuth);
 	for (UINT32 i = 0; i < cbOwnerAuth; i++) {
-		wprintf(L"%02x", pbOwnerAuth[i]);
+		wprintf_s(L"%02x", pbOwnerAuth[i]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 	*/
 	//dispatch based on TPM version
 	
@@ -3573,7 +3573,7 @@ DllExport HRESULT TpmNVDefineSpace(
 		{
 			goto Cleanup;
 		}
-		//wprintf(L"TPM nvdefine returned successfully!\n");
+		//wprintf_s(L"TPM nvdefine returned successfully!\n");
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
@@ -3638,7 +3638,7 @@ DllExport HRESULT TpmNVReadValue(
 		{
 			goto Cleanup;
 		}
-		//wprintf(L"TPM nvdefine returned successfully!\n");
+		//wprintf_s(L"TPM nvdefine returned successfully!\n");
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
@@ -3697,7 +3697,7 @@ DllExport HRESULT TpmNVWriteValueAuth(
 		{
 			goto Cleanup;
 		}
-		//wprintf(L"TPM nvdefine returned successfully!\n");
+		//wprintf_s(L"TPM nvdefine returned successfully!\n");
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
@@ -3754,7 +3754,7 @@ DllExport HRESULT TpmPCRExtend(
 		{
 			goto Cleanup;
 		}
-		//wprintf(L"TPM nvdefine returned successfully!\n");
+		//wprintf_s(L"TPM nvdefine returned successfully!\n");
 	}
 	else if (tpmVersion == TPM_VERSION_20)
 	{
@@ -3762,7 +3762,7 @@ DllExport HRESULT TpmPCRExtend(
 		{
 			goto Cleanup;
 		}
-		wprintf(L"TPM pcrExtend20 returned successfully!\n");
+		wprintf_s(L"TPM pcrExtend20 returned successfully!\n");
 	}
 	else
 	{

@@ -4393,7 +4393,7 @@ HRESULT pcrExtend20(
 	}
 	if (returnCode != 0)
 	{
-		//wprintf(L"TPM command failed with return code: %08x\n", returnCode);
+		//wprintf_s(L"TPM command failed with return code: %08x\n", returnCode);
 		hr = E_FAIL;
 		goto Cleanup;
 	}
