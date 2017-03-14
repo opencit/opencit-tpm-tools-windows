@@ -1841,113 +1841,117 @@ DllExport HRESULT TpmAttCreateAttestationfromLog(
         hr = E_INVALIDARG;
         goto Cleanup;
     }
-	if (pbQuote != NULL){
-		// Is Quote recognized?
-		if ((memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) != 0) &&
-			(memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) != 0))
-		{
-			hr = E_INVALIDARG;
-			goto Cleanup;
-		}
+	if (pbQuote == NULL){
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
 
-		// Filter Log for relevant entries. The tpm driver uses the pcrMask = 0x0000F77f
-		if (FAILED(hr = TpmAttiFilterLog(pbLog,
-			cbLog,
-			0x0000F77f, //pcrmask used by driver
-			NULL,
-			0,
-			&cbFilteredLog)))
-		{
-			goto Cleanup;
-		}
+	// Is Quote recognized?
+	if ((memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) != 0) &&
+		(memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) != 0))
+	{
+		hr = E_INVALIDARG;
+		goto Cleanup;
+	}
 
-		cbRequired = sizeof(PCP_PLATFORM_ATTESTATION_BLOB) +
-			SHA1_DIGEST_SIZE * AVAILABLE_PLATFORM_PCRS +
-			cbQuote +
-			cbSig +
-			cbFilteredLog;
+	// Filter Log for relevant entries. The tpm driver uses the pcrMask = 0x0000F77f
+	if (FAILED(hr = TpmAttiFilterLog(pbLog,
+		cbLog,
+		0x0000F77f, //pcrmask used by driver
+		NULL,
+		0,
+		&cbFilteredLog)))
+	{
+		goto Cleanup;
+	}
 
-		if ((pbOutput == NULL) || (cbOutput == 0))
-		{
-			*pcbResult = cbRequired;
-			goto Cleanup;
-		}
-		if (cbOutput < cbRequired)
-		{
-			hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
-			*pcbResult = cbRequired;
-			goto Cleanup;
-		}
+	cbRequired = sizeof(PCP_PLATFORM_ATTESTATION_BLOB) +
+		SHA1_DIGEST_SIZE * AVAILABLE_PLATFORM_PCRS +
+		cbQuote +
+		cbSig +
+		cbFilteredLog;
 
-		pAttestation->Magic = PCP_PLATFORM_ATTESTATION_MAGIC;
-		if (memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) == 0)
-		{
-			pAttestation->Platform = TPM_VERSION_12;
-		}
-		else if (memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) == 0)
-		{
-			pAttestation->Platform = TPM_VERSION_20;
-		}
-		pAttestation->HeaderSize = sizeof(PCP_PLATFORM_ATTESTATION_BLOB);
-		pAttestation->cbPcrValues = AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
-		pAttestation->cbQuote = cbQuote;
-		pAttestation->cbSignature = cbSig;
-		pAttestation->cbLog = cbFilteredLog;
-		cursor = pAttestation->HeaderSize;
+	if ((pbOutput == NULL) || (cbOutput == 0))
+	{
+		hr = E_INVALIDARG;
+		*pcbResult = cbRequired;
+		goto Cleanup;
+	}
+	if (cbOutput < cbRequired)
+	{
+		hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+		*pcbResult = cbRequired;
+		goto Cleanup;
+	}
 
-		// Skip over PCR list in the log for now. We will fill this in after we have filtered the log
-		cursor += AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
+	pAttestation->Magic = PCP_PLATFORM_ATTESTATION_MAGIC;
+	if (memcmp(pbQuote, tpm12QuoteHdr, sizeof(tpm12QuoteHdr)) == 0)
+	{
+		pAttestation->Platform = TPM_VERSION_12;
+	}
+	else if (memcmp(pbQuote, tpm20QuoteHdr, sizeof(tpm20QuoteHdr)) == 0)
+	{
+		pAttestation->Platform = TPM_VERSION_20;
+	}
+	pAttestation->HeaderSize = sizeof(PCP_PLATFORM_ATTESTATION_BLOB);
+	pAttestation->cbPcrValues = AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
+	pAttestation->cbQuote = cbQuote;
+	pAttestation->cbSignature = cbSig;
+	pAttestation->cbLog = cbFilteredLog;
+	cursor = pAttestation->HeaderSize;
 
-		// Copy quote
-		if (memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbQuote, cbQuote))
-		{
-			hr = E_FAIL;
-			goto Cleanup;
-		}
-		cursor += cbQuote;
+	// Skip over PCR list in the log for now. We will fill this in after we have filtered the log
+	cursor += AVAILABLE_PLATFORM_PCRS * SHA1_DIGEST_SIZE;
 
-		// Copy signature
-		if (memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbSig, cbSig))
-		{
-			hr = E_FAIL;
-			goto Cleanup;
-		}
-		cursor += cbSig;
+	// Copy quote
+	if (memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbQuote, cbQuote))
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	cursor += cbQuote;
 
-		// Filter log
-		if (FAILED(hr = TpmAttiFilterLog(pbLog,
-			cbLog,
-			0x0000F77f, //pcrmask used by driver
-			&pbOutput[cursor],
-			cbFilteredLog,
-			&cbFilteredLog)))
-		{
-			goto Cleanup;
-		}
+	// Copy signature
+	if (memcpy_s(&pbOutput[cursor], cbOutput - cursor, pbSig, cbSig))
+	{
+		hr = E_FAIL;
+		goto Cleanup;
+	}
+	cursor += cbSig;
 
-		// Generate PCR list from the filtered log
-		if (FAILED(hr = TpmAttiComputeSoftPCRs(&pbOutput[cursor],
-			cbFilteredLog,
-			&pbOutput[pAttestation->HeaderSize],
-			NULL)))
-		{
-			goto Cleanup;
-		}
-		cursor += cbFilteredLog;
+	// Filter log
+	if (FAILED(hr = TpmAttiFilterLog(pbLog,
+		cbLog,
+		0x0000F77f, //pcrmask used by driver
+		&pbOutput[cursor],
+		cbFilteredLog,
+		&cbFilteredLog)))
+	{
+		goto Cleanup;
+	}
 
-		// Return finalized attestation blob size
-		*pcbResult = cursor;
+	// Generate PCR list from the filtered log
+	if (FAILED(hr = TpmAttiComputeSoftPCRs(&pbOutput[cursor],
+		cbFilteredLog,
+		&pbOutput[pAttestation->HeaderSize],
+		NULL)))
+	{
+		goto Cleanup;
+	}
+	cursor += cbFilteredLog;
 
-		// Return the AIK name, used for the Quote, if requested
-		if (pszAikName != NULL)
-		{
-			*pszAikName = szAikNameInternal;
-		}
+	// Return finalized attestation blob size
+	*pcbResult = cursor;
 
-		if (pbAikPubDigest != NULL)
-		{
-			memcpy_s(pbAikPubDigest, SHA1_DIGEST_SIZE, pbAikPubDig, min(SHA1_DIGEST_SIZE, cbAikPubDig));
-		}
+	// Return the AIK name, used for the Quote, if requested
+	if (pszAikName != NULL)
+	{
+		*pszAikName = szAikNameInternal;
+	}
+
+	if (pbAikPubDigest != NULL)
+	{
+		memcpy_s(pbAikPubDigest, SHA1_DIGEST_SIZE, pbAikPubDig, min(SHA1_DIGEST_SIZE, cbAikPubDig));
 	}
 
 Cleanup:
