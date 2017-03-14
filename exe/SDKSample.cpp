@@ -590,8 +590,8 @@ Retrieve the version strings from the PCP provider and the TPM.
     }
     versionData[cbData / sizeof(WCHAR)] = 0x0000;
 
-    wprintf(L"<Version>\n");
-    wprintf(L"  <Provider>%s</Provider>\n", versionData);
+    wprintf_s(L"<Version>\n");
+    wprintf_s(L"  <Provider>%s</Provider>\n", versionData);
 
     if(FAILED(hr = HRESULT_FROM_NT(BCryptGetProperty(
                             hAlg,
@@ -611,8 +611,8 @@ Retrieve the version strings from the PCP provider and the TPM.
     }
     versionData[cbData / sizeof(WCHAR)] = 0x0000;
 
-    wprintf(L"  <TPM>\n    %s\n  </TPM>\n", versionData);
-    wprintf(L"</Version>\n");
+    wprintf_s(L"  <TPM>\n    %s\n  </TPM>\n", versionData);
+    wprintf_s(L"</Version>\n");
 
 Cleanup:
     if(hAlg != NULL)
@@ -637,14 +637,14 @@ _In_reads_(argc) WCHAR* argv[]
 	// Get TPM version to select implementation
 	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
 	{
-		wprintf(L"Get TPM version failed.\n");
+		wprintf_s(L"Get TPM version failed.\n");
 		return hr;
 	}
 
 	if (tpmVersion == TPM_VERSION_12)
-		wprintf(L"1.2");
+		wprintf_s(L"1.2");
 	else
-		wprintf(L"2.0");
+		wprintf_s(L"2.0");
 	return hr;
 }
 
@@ -761,7 +761,7 @@ platforms EKs in the returned store.
 
     if(certCount == 0)
     {
-        wprintf(L"No EK Certificates found.\n");
+        wprintf_s(L"No EK Certificates found.\n");
         hr = HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
         goto Cleanup;
     }
@@ -816,7 +816,7 @@ platforms EKs in the returned store.
             goto Cleanup;
         }
     }
-    //wprintf(L"OK.\n");
+    //wprintf_s(L"OK.\n");
 	// Print out the EKCert as 
 	BYTE *ekbuf = pcCertContext->pbCertEncoded;
 	int ekbufLen = pcCertContext->cbCertEncoded;
@@ -900,7 +900,7 @@ platforms EKs in the returned store.
 
     if(certCount == 0)
     {
-        wprintf(L"No EK Certificates found.\n");
+        wprintf_s(L"No EK Certificates found.\n");
         hr = HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
         goto Cleanup;
     }
@@ -953,7 +953,7 @@ platforms EKs in the returned store.
             goto Cleanup;
         }
     }
-    wprintf(L"OK.\n");
+    wprintf_s(L"OK.\n");
 
 Cleanup:
     if(pcCertContext != NULL)
@@ -1030,7 +1030,7 @@ that it is an enterprise asset.
     }
     else
     {
-        wprintf(L"%s %s [cert file]\n",
+        wprintf_s(L"%s %s [cert file]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -1079,7 +1079,7 @@ that it is an enterprise asset.
         goto Cleanup;
     }
 
-    wprintf(L"Ok.\n");
+    wprintf_s(L"Ok.\n");
 
 Cleanup:
     if(pcCertContext != NULL)
@@ -1158,7 +1158,7 @@ trustworthy.
     }
     else
     {
-        wprintf(L"%s %s [cert file] {key file}\n",
+        wprintf_s(L"%s %s [cert file] {key file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -1271,7 +1271,7 @@ Obtain entropy from the TPM. Optionally stir the entropy generator in the TPM.
     {
         if(swscanf_s(argv[2], L"%u", &cbRandom) == 0)
         {
-            wprintf(L"%s %s [size] {seed data} {output file}\n", argv[0], argv[1]);
+            wprintf_s(L"%s %s [size] {seed data} {output file}\n", argv[0], argv[1]);
             goto Cleanup;
         }
 
@@ -1282,7 +1282,7 @@ Obtain entropy from the TPM. Optionally stir the entropy generator in the TPM.
     }
     else
     {
-        wprintf(L"%s %s [size] {seed data} {output file}\n", argv[0], argv[1]);
+        wprintf_s(L"%s %s [size] {seed data} {output file}\n", argv[0], argv[1]);
         hr = E_INVALIDARG;
         goto Cleanup;
     }
@@ -1343,12 +1343,12 @@ Obtain entropy from the TPM. Optionally stir the entropy generator in the TPM.
     }
 
     // Output the result
-    wprintf(L"<Random size=\"%u\">\n  ", cbRandom);
+    wprintf_s(L"<Random size=\"%u\">\n  ", cbRandom);
     for(UINT32 n = 0; n < cbRandom; n++)
     {
-        wprintf(L"%02x", pbRandom[n]);
+        wprintf_s(L"%02x", pbRandom[n]);
     }
-    wprintf(L"\n</Random>\n");
+    wprintf_s(L"\n</Random>\n");
 
 Cleanup:
     ZeroAndFree((PVOID*)&pbRandom, cbRandom);
@@ -1497,24 +1497,24 @@ log can be used to calculate the PCRs in the TPM.
         }
     }
 
-    wprintf(L"<PlatformInfo>\n");
+    wprintf_s(L"<PlatformInfo>\n");
     if(deviceInfo.structVersion == 1)
     {
         PcpToolLevelPrefix(1);
-        wprintf(L"<DeviceInfo>\n");
+        wprintf_s(L"<DeviceInfo>\n");
         PcpToolLevelPrefix(2);
-        wprintf(L"<TPMVersion>%s</TPMVersion>\n", deviceInfo.tpmVersion < TpmVersionCount ? TpmVersion[deviceInfo.tpmVersion] : TpmVersion[0]);
+        wprintf_s(L"<TPMVersion>%s</TPMVersion>\n", deviceInfo.tpmVersion < TpmVersionCount ? TpmVersion[deviceInfo.tpmVersion] : TpmVersion[0]);
         PcpToolLevelPrefix(2);
-        wprintf(L"<TPMInterfaceType>%s</TPMInterfaceType>\n", deviceInfo.tpmInterfaceType < TpmIFTypeCount ? TpmIFType[deviceInfo.tpmInterfaceType] : TpmIFType[0]);
+        wprintf_s(L"<TPMInterfaceType>%s</TPMInterfaceType>\n", deviceInfo.tpmInterfaceType < TpmIFTypeCount ? TpmIFType[deviceInfo.tpmInterfaceType] : TpmIFType[0]);
         PcpToolLevelPrefix(2);
-        wprintf(L"<TPMImplementationRevision>%d</TPMImplementationRevision>\n", deviceInfo.tpmImpRevision);
+        wprintf_s(L"<TPMImplementationRevision>%d</TPMImplementationRevision>\n", deviceInfo.tpmImpRevision);
         PcpToolLevelPrefix(1);
-        wprintf(L"</DeviceInfo>\n");
+        wprintf_s(L"</DeviceInfo>\n");
     }
     else
     {
         PcpToolLevelPrefix(1);
-        wprintf(L"<DeviceInfo>INVALID</DeviceInfo>\n");
+        wprintf_s(L"<DeviceInfo>INVALID</DeviceInfo>\n");
     }
 
     // Output result
@@ -1522,7 +1522,7 @@ log can be used to calculate the PCRs in the TPM.
     {
         goto Cleanup;
     }
-    wprintf(L"</PlatformInfo>\n");
+    wprintf_s(L"</PlatformInfo>\n");
 
 Cleanup:
     if (hContext != NULL)
@@ -1577,7 +1577,7 @@ Quote in the log.
     }
     else
     {
-        wprintf(L"%s %s [log file]\n", argv[0], argv[1]);
+        wprintf_s(L"%s %s [log file]\n", argv[0], argv[1]);
         hr = E_INVALIDARG;
         goto Cleanup;
     }
@@ -1635,7 +1635,7 @@ usageAuth value and a migrationAuth
     }
     else
     {
-        wprintf(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
+        wprintf_s(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
                 argv[0],
                 argv[1]);
        hr = E_INVALIDARG;
@@ -1677,7 +1677,7 @@ usageAuth value and a migrationAuth
     {
         if(swscanf_s(argv[5], L"%x", &pcrMask) == 0)
         {
-            wprintf(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
+            wprintf_s(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
                     argv[0],
                     argv[1]);
             goto Cleanup;
@@ -1882,7 +1882,7 @@ usageAuth value and a migrationAuth
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
+		wprintf_s(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -1924,7 +1924,7 @@ usageAuth value and a migrationAuth
 	{
 		if (swscanf_s(argv[5], L"%x", &pcrMask) == 0)
 		{
-			wprintf(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
+			wprintf_s(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
 				argv[0],
 				argv[1]);
 			goto Cleanup;
@@ -2113,9 +2113,9 @@ usageAuth value and a migrationAuth
 	// Output Opaque key blob
 	for (UINT32 n = 0; n < cbKey; n++)
 	{
-		wprintf(L"%02x", pbKey[n]);
+		wprintf_s(L"%02x", pbKey[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
 Cleanup:
 	if (hKey != NULL)
@@ -2182,7 +2182,7 @@ usageAuth value and a migrationAuth
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
+		wprintf_s(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -2224,7 +2224,7 @@ usageAuth value and a migrationAuth
 	{
 		if (swscanf_s(argv[5], L"%x", &pcrMask) == 0)
 		{
-			wprintf(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
+			wprintf_s(L"%s %s [key name] {usageAuth} {migrationAuth} {pcrMask} {pcrs}\n",
 				argv[0],
 				argv[1]);
 			goto Cleanup;
@@ -2413,9 +2413,9 @@ usageAuth value and a migrationAuth
 	// Output Opaque key blob
 	for (UINT32 n = 0; n < cbKey; n++)
 	{
-		wprintf(L"%02x", pbKey[n]);
+		wprintf_s(L"%02x", pbKey[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
 Cleanup:
 	if (hKey != NULL)
@@ -2483,7 +2483,7 @@ the key and Identity Binding, that is the proof of posession.
     }
     else
     {
-        wprintf(L"%s %s [key name] {idBinding file} {nonce} {usageAuth}\n",
+        wprintf_s(L"%s %s [key name] {idBinding file} {nonce} {usageAuth}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -2649,19 +2649,19 @@ the key and Identity Binding, that is the proof of posession.
     }
 
     // Output results
-    wprintf(L"<AIK>\n");
+    wprintf_s(L"<AIK>\n");
     if(FAILED(hr = PcpToolDisplayKey(keyName, pbAikPub, cbAikPub, 1)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<IdentityBinding size=\"%lu\">", cbIdBinding);
+    wprintf_s(L"<IdentityBinding size=\"%lu\">", cbIdBinding);
     for(UINT32 n = 0; n < cbIdBinding; n++)
     {
-        wprintf(L"%02x", pbIdBinding[n]);
+        wprintf_s(L"%02x", pbIdBinding[n]);
     }
-    wprintf(L"</IdentityBinding>\n");
-    wprintf(L"</AIK>\n");
+    wprintf_s(L"</IdentityBinding>\n");
+    wprintf_s(L"</AIK>\n");
 
 Cleanup:
     if(hKey != NULL)
@@ -2758,11 +2758,11 @@ the key and Identity Binding, that is the proof of posession.
 	{
 		keyName = argv[2];
 		hexStringToWstr(keyName, idLabel);
-		//wprintf(L"%s %s\n", keyName, idLabel);
+		//wprintf_s(L"%s %s\n", keyName, idLabel);
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [nonce | privCA] {usageAuth}\n",
+		wprintf_s(L"%s %s [key name] [nonce | privCA] {usageAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -2774,13 +2774,13 @@ the key and Identity Binding, that is the proof of posession.
 	{
 		privCA = argv[3];
 		hexStringToByteArray(privCA, chosenIDHash);
-		//wprintf(L"%s %s\n", privCA, chosenIDHash);
+		//wprintf_s(L"%s %s\n", privCA, chosenIDHash);
 		/* print out nonce for debug purpose
 		for (UINT32 n = 0; n < sizeof(chosenIDHash)/sizeof(chosenIDHash[0]); n++)
 		{
-		wprintf(L"%02x", chosenIDHash[n]);
+		wprintf_s(L"%02x", chosenIDHash[n]);
 		}
-		wprintf(L"\n");
+		wprintf_s(L"\n");
 		*/
 	}
 
@@ -2789,7 +2789,7 @@ the key and Identity Binding, that is the proof of posession.
 	{
 		usageAuth = argv[4];
 		hexStringToWstr(usageAuth, aikSecret);
-		//wprintf(L"%s %s\n", usageAuth, aikSecret);
+		//wprintf_s(L"%s %s\n", usageAuth, aikSecret);
 		if (!wcscmp(usageAuth, L"@"))
 		{
 			// Caller requested UI
@@ -2828,7 +2828,7 @@ the key and Identity Binding, that is the proof of posession.
 		0,
 		NCRYPT_OVERWRITE_KEY_FLAG))))
 	{
-		wprintf(L"Wrong with CreatePersistedKey %s\n", idLabel);
+		wprintf_s(L"Wrong with CreatePersistedKey %s\n", idLabel);
 		goto Cleanup;
 	}
 
@@ -2845,7 +2845,7 @@ the key and Identity Binding, that is the proof of posession.
 				(DWORD)((wcsnlen_s(aikSecret, ARG_MAX) + 1) * sizeof(WCHAR)),
 				0))))
 			{
-				wprintf(L"Wrong with setProperty usageAuth %s\n", aikSecret);
+				wprintf_s(L"Wrong with setProperty usageAuth %s\n", aikSecret);
 
 				goto Cleanup;
 			}
@@ -2883,7 +2883,7 @@ the key and Identity Binding, that is the proof of posession.
 			sizeof(chosenIDHash)/sizeof(chosenIDHash[0]),
 			0))))
 		{
-			wprintf(L"Wrong with setProperty idbinding\n");
+			wprintf_s(L"Wrong with setProperty idbinding\n");
 			goto Cleanup;
 		}
 	}
@@ -2923,7 +2923,7 @@ the key and Identity Binding, that is the proof of posession.
 	// Get TPM version to select implementation
 	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
 	{
-		wprintf(L"Get TPM version failed.\n");
+		wprintf_s(L"Get TPM version failed.\n");
 		goto Cleanup;
 	}
 
@@ -2936,9 +2936,9 @@ the key and Identity Binding, that is the proof of posession.
 		if (cbIdBinding > 256) {
 			for (UINT32 n = cbIdBinding - 256; n < cbIdBinding; n++)
 			{
-				wprintf(L"%02x", pbIdBinding[n]);
+				wprintf_s(L"%02x", pbIdBinding[n]);
 			}
-			wprintf(L" ");
+			wprintf_s(L" ");
 		}
 	}
 	else {
@@ -2960,20 +2960,20 @@ the key and Identity Binding, that is the proof of posession.
 		if (rbAikName!=0) {
 			for (UINT32 n = 0; n < rbAikName; n++)
 			{
-				wprintf(L"%02x", pbAikName[n]);
+				wprintf_s(L"%02x", pbAikName[n]);
 			}
-			wprintf(L" ");
+			wprintf_s(L" ");
 		}
 	}
 	/* output AIK Public key Modulus */
 	pKey = (BCRYPT_RSAKEY_BLOB*)pbAikPub;
 	for (UINT32 n = 0; n < pKey->cbModulus; n++)
 	{
-		wprintf(L"%02x", pbAikPub[sizeof(BCRYPT_RSAKEY_BLOB) +
+		wprintf_s(L"%02x", pbAikPub[sizeof(BCRYPT_RSAKEY_BLOB) +
 			pKey->cbPublicExp +
 			n]);
 	}
-	wprintf(L" ");
+	wprintf_s(L" ");
 
 	//export the opaque key blob - Haidong
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
@@ -3007,16 +3007,16 @@ the key and Identity Binding, that is the proof of posession.
 	/* output AIK opaque key blob*/
 	for (UINT32 n = 0; n < cbAik; n++)
 	{
-		wprintf(L"%02x", pbAik[n]);
+		wprintf_s(L"%02x", pbAik[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
 	/* NOT since we ouput the AIK opaque key --output AIK Pub key blob
 	for (UINT32 n = 0; n < cbAikPub; n++)
 	{
-		wprintf(L"%02x", pbAikPub[n]);
+		wprintf_s(L"%02x", pbAikPub[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 	*/
 
 Cleanup:
@@ -3091,11 +3091,11 @@ the key and Identity Binding, that is the proof of posession.
 	{
 		keyName = argv[2];
 		hexStringToWstr(keyName, idLabel);
-		//wprintf(L"%s %s\n", keyName, idLabel);
+		//wprintf_s(L"%s %s\n", keyName, idLabel);
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [nonce | privCA] {usageAuth}\n",
+		wprintf_s(L"%s %s [key name] [nonce | privCA] {usageAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -3107,13 +3107,13 @@ the key and Identity Binding, that is the proof of posession.
 	{
 		privCA = argv[3];
 		hexStringToByteArray(privCA, chosenIDHash);
-		//wprintf(L"%s %s\n", privCA, chosenIDHash);
+		//wprintf_s(L"%s %s\n", privCA, chosenIDHash);
 		/* print out nonce for debug purpose
 		for (UINT32 n = 0; n < sizeof(chosenIDHash)/sizeof(chosenIDHash[0]); n++)
 		{
-		wprintf(L"%02x", chosenIDHash[n]);
+		wprintf_s(L"%02x", chosenIDHash[n]);
 		}
-		wprintf(L"\n");
+		wprintf_s(L"\n");
 		*/
 	}
 
@@ -3122,7 +3122,7 @@ the key and Identity Binding, that is the proof of posession.
 	{
 		usageAuth = argv[4];
 		hexStringToWstr(usageAuth, aikSecret);
-		//wprintf(L"%s %s\n", usageAuth, aikSecret);
+		//wprintf_s(L"%s %s\n", usageAuth, aikSecret);
 		if (!wcscmp(usageAuth, L"@"))
 		{
 			// Caller requested UI
@@ -3161,7 +3161,7 @@ the key and Identity Binding, that is the proof of posession.
 		0,
 		NCRYPT_OVERWRITE_KEY_FLAG))))
 	{
-		wprintf(L"Wrong with CreatePersistedKey %s\n", idLabel);
+		wprintf_s(L"Wrong with CreatePersistedKey %s\n", idLabel);
 		goto Cleanup;
 	}
 
@@ -3178,7 +3178,7 @@ the key and Identity Binding, that is the proof of posession.
 	(DWORD)((wcsnlen_s(aikSecret, ARG_MAX) + 1) * sizeof(WCHAR)),
 	0))))
 	{
-	wprintf(L"Wrong with setProperty usageAuth %s\n", aikSecret);
+	wprintf_s(L"Wrong with setProperty usageAuth %s\n", aikSecret);
 
 	goto Cleanup;
 	}
@@ -3216,7 +3216,7 @@ the key and Identity Binding, that is the proof of posession.
 			sizeof(chosenIDHash) / sizeof(chosenIDHash[0]),
 			0))))
 		{
-			wprintf(L"Wrong with setProperty idbinding\n");
+			wprintf_s(L"Wrong with setProperty idbinding\n");
 			goto Cleanup;
 		}
 	}
@@ -3259,20 +3259,20 @@ the key and Identity Binding, that is the proof of posession.
 	if (cbIdBinding > 256) {
 		for (UINT32 n = cbIdBinding - 256; n < cbIdBinding; n++)
 		{
-			wprintf(L"%02x", pbIdBinding[n]);
+			wprintf_s(L"%02x", pbIdBinding[n]);
 		}
-		wprintf(L" ");
+		wprintf_s(L" ");
 	}
 
 	/* output AIK Public key Modulus */
 	pKey = (BCRYPT_RSAKEY_BLOB*)pbAikPub;
 	for (UINT32 n = 0; n < pKey->cbModulus; n++)
 	{
-		wprintf(L"%02x", pbAikPub[sizeof(BCRYPT_RSAKEY_BLOB) +
+		wprintf_s(L"%02x", pbAikPub[sizeof(BCRYPT_RSAKEY_BLOB) +
 			pKey->cbPublicExp +
 			n]);
 	}
-	wprintf(L" ");
+	wprintf_s(L" ");
 
 	//export the opaque key blob - Haidong
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
@@ -3306,16 +3306,16 @@ the key and Identity Binding, that is the proof of posession.
 	/* output AIK opaque key blob*/
 	for (UINT32 n = 0; n < cbAik; n++)
 	{
-		wprintf(L"%02x", pbAik[n]);
+		wprintf_s(L"%02x", pbAik[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
 	/* NOT since we ouput the AIK opaque key --output AIK Pub key blob
 	for (UINT32 n = 0; n < cbAikPub; n++)
 	{
-	wprintf(L"%02x", pbAikPub[n]);
+	wprintf_s(L"%02x", pbAikPub[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 	*/
 
 Cleanup:
@@ -3387,7 +3387,7 @@ BCRYPT_RSAKEY_BLOB structure.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] {key File}\n",
+        wprintf_s(L"%s %s [idBinding file] {key File}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -3530,7 +3530,7 @@ that encrypts a certificate for the AIK for example.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n",
+        wprintf_s(L"%s %s [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -3559,7 +3559,7 @@ that encrypts a certificate for the AIK for example.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n",
+        wprintf_s(L"%s %s [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -3573,7 +3573,7 @@ that encrypts a certificate for the AIK for example.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n",
+        wprintf_s(L"%s %s [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -3698,7 +3698,7 @@ that encrypts a certificate for the AIK for example.
     }
 
     // Store the activation if required
-    if(idBindingFile != NULL)
+    if(activationBlobFile != NULL)
     {
         if(FAILED(hr = PcpToolWriteFile(
                                 activationBlobFile,
@@ -3710,22 +3710,22 @@ that encrypts a certificate for the AIK for example.
     }
 
     // Output results
-    wprintf(L"<Activation>\n");
+    wprintf_s(L"<Activation>\n");
     if(FAILED(hr = PcpToolDisplayKey(L"AIK", pbAikPub, cbAikPub, 1)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<ActivationBlob size=\"%u\">\n", cbActivationBlob);
+    wprintf_s(L"<ActivationBlob size=\"%u\">\n", cbActivationBlob);
     PcpToolLevelPrefix(2);
     for(UINT32 n = 0; n < cbActivationBlob; n++)
     {
-        wprintf(L"%02x", pbActivationBlob[n]);
+        wprintf_s(L"%02x", pbActivationBlob[n]);
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"</ActivationBlob>\n");
-    wprintf(L"</Activation>\n");
+    wprintf_s(L"</ActivationBlob>\n");
+    wprintf_s(L"</Activation>\n");
 
 Cleanup:
     if(hEK != NULL)
@@ -3790,7 +3790,7 @@ data that may be release if the handshake was successful.
     }
     else
     {
-        wprintf(L"%s %s [key name] [Blob file]\n",
+        wprintf_s(L"%s %s [key name] [Blob file]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -3822,7 +3822,7 @@ data that may be release if the handshake was successful.
     }
     else
     {
-        wprintf(L"%s %s [key name] [Blob file]\n",
+        wprintf_s(L"%s %s [key name] [Blob file]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -3871,10 +3871,10 @@ data that may be release if the handshake was successful.
     }
 
     // Output results
-    wprintf(L"<Activation>\n");
+    wprintf_s(L"<Activation>\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"<Secret size=\"%lu\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
-    wprintf(L"</Activation>\n");
+    wprintf_s(L"<Secret size=\"%lu\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
+    wprintf_s(L"</Activation>\n");
 
 Cleanup:
     if(hKey != NULL)
@@ -3937,11 +3937,11 @@ data that may be release if the handshake was successful.
 	{
 		keyName = argv[2];
 		cidLabel = hexStringToWstr(keyName, idLabel);
-		wprintf(L"keyname: %s\n", idLabel);
+		wprintf_s(L"keyname: %s\n", idLabel);
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [usageAuth] [Blob file]\n",
+		wprintf_s(L"%s %s [key name] [usageAuth] [Blob file]\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -3956,7 +3956,7 @@ data that may be release if the handshake was successful.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [usageAuth] [Blob]\n",
+		wprintf_s(L"%s %s [key name] [usageAuth] [Blob]\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -3981,7 +3981,7 @@ data that may be release if the handshake was successful.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [Blob]\n",
+		wprintf_s(L"%s %s [key name] [Blob]\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -3994,7 +3994,7 @@ data that may be release if the handshake was successful.
 		MS_PLATFORM_CRYPTO_PROVIDER,
 		0))))
 	{
-		wprintf(L"failed to open storage priovider\n");
+		wprintf_s(L"failed to open storage priovider\n");
 		goto Cleanup;
 	}
 
@@ -4005,7 +4005,7 @@ data that may be release if the handshake was successful.
 		0,
 		0))))
 	{
-		wprintf(L"failed to open key\n");
+		wprintf_s(L"failed to open key\n");
 		goto Cleanup;
 	}
 
@@ -4030,16 +4030,16 @@ data that may be release if the handshake was successful.
 		cbActivationBlob,
 		0))))
 	{
-		wprintf(L"failed to perform activation\n");
+		wprintf_s(L"failed to perform activation\n");
 		goto Cleanup;
 	}
 
-	wprintf(L"activationBlob size: %d\n", cbActivationBlob);
+	wprintf_s(L"activationBlob size: %d\n", cbActivationBlob);
 	for (UINT32 n = 0; n < cbActivationBlob; n++)
 	{
-		wprintf(L"%02x", pbActivationBlob[n]);
+		wprintf_s(L"%02x", pbActivationBlob[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
 	// get the public AIK
 	if (FAILED(hr = HRESULT_FROM_WIN32(NCryptExportKey(
@@ -4052,7 +4052,7 @@ data that may be release if the handshake was successful.
 		&cbAikPub,
 		0))))
 	{
-		wprintf(L"failed to get the public aik\n");
+		wprintf_s(L"failed to get the public aik\n");
 		goto Cleanup;
 	}
 
@@ -4064,7 +4064,7 @@ data that may be release if the handshake was successful.
 		&cbSecret,
 		0))))
 	{
-		wprintf(L"failed to get the secret\n");
+		wprintf_s(L"failed to get the secret\n");
 		goto Cleanup;
 	}
 
@@ -4074,16 +4074,16 @@ data that may be release if the handshake was successful.
 	// output the scecret/AIC
 	for (UINT32 n = 0; n < cbSecret; n++)
 	{
-		wprintf(L"%02x", pbSecret[n]);
+		wprintf_s(L"%02x", pbSecret[n]);
 	}
-	wprintf(L" ");
+	wprintf_s(L" ");
 
 	/* output AIK Pub key blob*/
 	for (UINT32 n = 0; n < cbAikPub; n++)
 	{
-		wprintf(L"%02x", pbAikPub[n]);
+		wprintf_s(L"%02x", pbAikPub[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
 Cleanup:
 	if (hKey != NULL)
@@ -4136,7 +4136,7 @@ system boot time degradation. An average 1.2 TPM for example requires around
     }
     else
     {
-        wprintf(L"%s %s [key name]\n",
+        wprintf_s(L"%s %s [key name]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -4235,7 +4235,7 @@ system boot time degradation. An average 1.2 TPM for example requires around
     }
 
     // Output results
-    wprintf(L"Key '%s' registered. OK!\n", keyName);
+    wprintf_s(L"Key '%s' registered. OK!\n", keyName);
 
 Cleanup:
     if(hRegKey != NULL)
@@ -4291,9 +4291,9 @@ around 500ms to create a quote in the log.
         goto Cleanup;
     }
 
-    wprintf(L"<RegisteredAIK>\n");
+    wprintf_s(L"<RegisteredAIK>\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"<PlatformAttestationKeys>\n");
+    wprintf_s(L"<PlatformAttestationKeys>\n");
     for(DWORD index = 0; SUCCEEDED(hr); index++)
     {
         cbAikPub = sizeof(pbAikPub);
@@ -4322,16 +4322,16 @@ around 500ms to create a quote in the log.
         if(valueType == REG_BINARY)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<QuoteKey name=\"%s\" size=\"%lu\">", keyName, cbAikPub);
+            wprintf_s(L"<QuoteKey name=\"%s\" size=\"%lu\">", keyName, cbAikPub);
             for(UINT32 n = 0; n < cbAikPub; n++)
             {
-                wprintf(L"%02x", pbAikPub[n]);
+                wprintf_s(L"%02x", pbAikPub[n]);
             }
-            wprintf(L"</QuoteKey>\n");
+            wprintf_s(L"</QuoteKey>\n");
         }
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"</PlatformAttestationKeys>\n");
+    wprintf_s(L"</PlatformAttestationKeys>\n");
     RegCloseKey(hRegKey);
     hRegKey = NULL;
 
@@ -4344,7 +4344,7 @@ around 500ms to create a quote in the log.
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<KeyAttestationKeys>\n");
+    wprintf_s(L"<KeyAttestationKeys>\n");
     for(DWORD index = 0; SUCCEEDED(hr); index++)
     {
         cbAikPub = sizeof(pbAikPub);
@@ -4373,17 +4373,17 @@ around 500ms to create a quote in the log.
         if(valueType == REG_BINARY)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<QuoteKey name=\"%s\" size=\"%lu\">", keyName, cbAikPub);
+            wprintf_s(L"<QuoteKey name=\"%s\" size=\"%lu\">", keyName, cbAikPub);
             for(UINT32 n = 0; n < cbAikPub; n++)
             {
-                wprintf(L"%02x", pbAikPub[n]);
+                wprintf_s(L"%02x", pbAikPub[n]);
             }
-            wprintf(L"</QuoteKey>\n");
+            wprintf_s(L"</QuoteKey>\n");
         }
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"</KeyAttestationKeys>\n");
-    wprintf(L"</RegisteredAIK>\n");
+    wprintf_s(L"</KeyAttestationKeys>\n");
+    wprintf_s(L"</RegisteredAIK>\n");
 
 Cleanup:
     if(hRegKey != NULL)
@@ -4429,7 +4429,7 @@ or in the machine context.
         goto Cleanup;
     }
 
-    wprintf(L"<Keys>\n");
+    wprintf_s(L"<Keys>\n");
     for(UINT32 n = 0; n < (sizeof(dwFlags) / sizeof(DWORD)); n++)
     {
         hr = S_OK;
@@ -4552,59 +4552,59 @@ or in the machine context.
                 }
 
                 PcpToolLevelPrefix(1);
-                wprintf(L"<Key>\n");
+                wprintf_s(L"<Key>\n");
                 PcpToolLevelPrefix(2);
-                wprintf(L"<Algorithm>%s</Algorithm>\n", pKeyName->pszAlgid);
+                wprintf_s(L"<Algorithm>%s</Algorithm>\n", pKeyName->pszAlgid);
                 PcpToolLevelPrefix(2);
-                wprintf(L"<MachineKey>%s</MachineKey>\n",
+                wprintf_s(L"<MachineKey>%s</MachineKey>\n",
                         ((dwFlags[n] & NCRYPT_MACHINE_KEY_FLAG) != 0) ?
                          L"TRUE" :
                          L"FALSE");
                 PcpToolLevelPrefix(2);
-                wprintf(L"<Name>%s</Name>\n",pKeyName->pszName);
+                wprintf_s(L"<Name>%s</Name>\n",pKeyName->pszName);
                 PcpToolLevelPrefix(2);
-                wprintf(L"<KeyLength>%lu</KeyLength>\n", keyLength);
+                wprintf_s(L"<KeyLength>%lu</KeyLength>\n", keyLength);
                 PcpToolLevelPrefix(2);
-                wprintf(L"<PubKeyDigest>");
+                wprintf_s(L"<PubKeyDigest>");
                 for(UINT32 n = 0; n < sizeof(pubKeyDigest); n++)
                 {
-                    wprintf(L"%02x", pubKeyDigest[n]);
+                    wprintf_s(L"%02x", pubKeyDigest[n]);
                 }
-                wprintf(L"</PubKeyDigest>\n");
+                wprintf_s(L"</PubKeyDigest>\n");
                 PcpToolLevelPrefix(2);
                 switch(dwKeyUsage & 0x0000ffff)
                 {
                     case NCRYPT_PCP_SIGNATURE_KEY:
-                        wprintf(L"<KeyUsage>SIGNATURE</KeyUsage>\n");
+                        wprintf_s(L"<KeyUsage>SIGNATURE</KeyUsage>\n");
                         break;
                     case NCRYPT_PCP_ENCRYPTION_KEY:
-                        wprintf(L"<KeyUsage>ENCRYPTION</KeyUsage>\n");
+                        wprintf_s(L"<KeyUsage>ENCRYPTION</KeyUsage>\n");
                         break;
                     case NCRYPT_PCP_GENERIC_KEY:
-                        wprintf(L"<KeyUsage>GENERIC</KeyUsage>\n");
+                        wprintf_s(L"<KeyUsage>GENERIC</KeyUsage>\n");
                         break;
                     case NCRYPT_PCP_STORAGE_KEY:
-                        wprintf(L"<KeyUsage>STORAGE</KeyUsage>\n");
+                        wprintf_s(L"<KeyUsage>STORAGE</KeyUsage>\n");
                         break;
                     case NCRYPT_PCP_IDENTITY_KEY:
-                        wprintf(L"<KeyUsage>IDENTITY</KeyUsage>\n");
+                        wprintf_s(L"<KeyUsage>IDENTITY</KeyUsage>\n");
                         break;
                     default:
-                        wprintf(L"<KeyUsage>UNKNOWN</KeyUsage>\n");
+                        wprintf_s(L"<KeyUsage>UNKNOWN</KeyUsage>\n");
                         break;
                 }
                 PcpToolLevelPrefix(2);
-                wprintf(L"<PINRequired>%s</PINRequired>\n",
+                wprintf_s(L"<PINRequired>%s</PINRequired>\n",
                         passwordRequired ?
                          L"TRUE" :
                          L"FALSE");
                 PcpToolLevelPrefix(2);
-                wprintf(L"<ExportAllowed>%s</ExportAllowed>\n",
+                wprintf_s(L"<ExportAllowed>%s</ExportAllowed>\n",
                         (exportPolicy & NCRYPT_ALLOW_EXPORT_FLAG) ?
                          L"TRUE" :
                          L"FALSE");
                 PcpToolLevelPrefix(1);
-                wprintf(L"</Key>\n");
+                wprintf_s(L"</Key>\n");
 
                 NCryptFreeObject(hKey);
                 hKey = NULL;
@@ -4613,7 +4613,7 @@ or in the machine context.
             }
         }
     }
-    wprintf(L"</Keys>\n");
+    wprintf_s(L"</Keys>\n");
 
 Cleanup:
     if(pKeyName != NULL)
@@ -4688,7 +4688,7 @@ This function will retrieve all certificates that are backed by keys on the PCPK
 
     if(certCount == 0)
     {
-        wprintf(L"No EK Certificates found.\n");
+        wprintf_s(L"No EK Certificates found.\n");
         hr = HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
         goto Cleanup;
     }
@@ -4730,7 +4730,7 @@ This function will retrieve all certificates that are backed by keys on the PCPK
             goto Cleanup;
         }
     }
-    wprintf(L"OK.\n");
+    wprintf_s(L"OK.\n");
 
 Cleanup:
     if(pcCertContext != NULL)
@@ -4782,7 +4782,7 @@ Change the useageAuth on a key.
     }
     else
     {
-        wprintf(L"%s %s [key name] [usageAuth] [newUsageAuth]\n",
+        wprintf_s(L"%s %s [key name] [usageAuth] [newUsageAuth]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -4796,7 +4796,7 @@ Change the useageAuth on a key.
     }
     else
     {
-        wprintf(L"%s %s [key name] [usageAuth] [newUsageAuth]\n",
+        wprintf_s(L"%s %s [key name] [usageAuth] [newUsageAuth]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -4810,7 +4810,7 @@ Change the useageAuth on a key.
     }
     else
     {
-        wprintf(L"%s %s [key name] [usageAuth] [newUsageAuth]\n",
+        wprintf_s(L"%s %s [key name] [usageAuth] [newUsageAuth]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -4858,7 +4858,7 @@ Change the useageAuth on a key.
         goto Cleanup;
     }
 
-    wprintf(L"Ok.\n");
+    wprintf_s(L"Ok.\n");
 
 Cleanup:
     if(hKey != NULL)
@@ -4943,7 +4943,7 @@ usageAuth value and a migrationAuth
     }
     else
     {
-        wprintf(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
+        wprintf_s(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -4957,7 +4957,7 @@ usageAuth value and a migrationAuth
     }
     else
     {
-        wprintf(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
+        wprintf_s(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -5175,7 +5175,7 @@ usageAuth value and a migrationAuth
 	}
 	else
 	{
-		wprintf(L"%s %s [opaque blob] [key name] {usageAuth} {migrationAuth}\n",
+		wprintf_s(L"%s %s [opaque blob] [key name] {usageAuth} {migrationAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -5189,7 +5189,7 @@ usageAuth value and a migrationAuth
 	}
 	else
 	{
-		wprintf(L"%s %s [opaque blob] [key name] {usageAuth} {migrationAuth}\n",
+		wprintf_s(L"%s %s [opaque blob] [key name] {usageAuth} {migrationAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -5394,7 +5394,7 @@ usageAuth value and a migrationAuth
 	}
 	else
 	{
-		wprintf(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
+		wprintf_s(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -5408,7 +5408,7 @@ usageAuth value and a migrationAuth
 	}
 	else
 	{
-		wprintf(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
+		wprintf_s(L"%s %s [key file] [key name] {usageAuth} {migrationAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -5589,7 +5589,7 @@ Export a user key from the PCP storage.
     }
     else
     {
-        wprintf(L"%s %s [key name] [migrationAuth] {key file}\n",
+        wprintf_s(L"%s %s [key name] [migrationAuth] {key file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -5603,7 +5603,7 @@ Export a user key from the PCP storage.
     }
     else
     {
-        wprintf(L"%s %s [key name] [migrationAuth] {key file}\n",
+        wprintf_s(L"%s %s [key name] [migrationAuth] {key file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -5717,7 +5717,7 @@ Delete a user key from the PCP storage.
     }
     else
     {
-        wprintf(L"%s %s [key name]\n",
+        wprintf_s(L"%s %s [key name]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -5750,7 +5750,7 @@ Delete a user key from the PCP storage.
     }
     hKey = NULL;
 
-    wprintf(L"Ok.\n");
+    wprintf_s(L"Ok.\n");
 
 Cleanup:
     if(hKey != NULL)
@@ -5799,7 +5799,7 @@ BCRYPT_RSAKEY_BLOB structure.
     }
     else
     {
-        wprintf(L"%s %s [key name] {key File}\n",
+        wprintf_s(L"%s %s [key name] {key File}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -5907,7 +5907,7 @@ BCRYPT_RSAKEY_BLOB structure.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] {key File}\n",
+		wprintf_s(L"%s %s [key name] {key File}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -6015,7 +6015,7 @@ BCRYPT_RSAKEY_BLOB structure.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] {key File}\n",
+		wprintf_s(L"%s %s [key name] {key File}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -6128,7 +6128,7 @@ proof.
     }
     else
     {
-        wprintf(L"%s %s [aik name] {attestation file} {nonce}\n",
+        wprintf_s(L"%s %s [aik name] {attestation file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -6238,12 +6238,12 @@ proof.
     }
 
     // Output results
-    wprintf(L"<PlatformAttestation size=\"%u\">\n", cbAttestation);
+    wprintf_s(L"<PlatformAttestation size=\"%u\">\n", cbAttestation);
     if(FAILED(hr = PcpToolDisplayPlatformAttestation(pbAttestation, cbAttestation, 1)))
     {
         goto Cleanup;
     }
-    wprintf(L"</PlatformAttestation>\n");
+    wprintf_s(L"</PlatformAttestation>\n");
 
 Cleanup:
     if(hAik != NULL)
@@ -6302,11 +6302,11 @@ proof.
 	{
 		aikName = argv[2];
 		hexStringToWstr(aikName, aikLabel);
-		//wprintf(L"%s %s\n", aikName, aikLabel);
+		//wprintf_s(L"%s %s\n", aikName, aikLabel);
 	}
 	else
 	{
-		wprintf(L"%s %s [aik name] {attestation file} {nonce} {aikauth}\n",
+		wprintf_s(L"%s %s [aik name] {attestation file} {nonce} {aikauth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -6318,7 +6318,7 @@ proof.
 	{
 		attestationFileName = argv[3];
 		hexStringToWstr(attestationFileName, attestationFile);
-		//wprintf(L"attestation blob filename: %s\n", attestationFile);
+		//wprintf_s(L"attestation blob filename: %s\n", attestationFile);
 	}
 
 	// Optional parameter: Nonce
@@ -6490,24 +6490,24 @@ PcpToolGetPlatformCounters(
     }
 
     // Output results
-    wprintf(L"<PlatformCounters>\n");
+    wprintf_s(L"<PlatformCounters>\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"<OsBootCount>%u</OsBootCount>\n", OsBootCount);
+    wprintf_s(L"<OsBootCount>%u</OsBootCount>\n", OsBootCount);
     PcpToolLevelPrefix(1);
-    wprintf(L"<OsResumeCount>%u</OsResumeCount>\n", OsResumeCount);
+    wprintf_s(L"<OsResumeCount>%u</OsResumeCount>\n", OsResumeCount);
     PcpToolLevelPrefix(1);
-    wprintf(L"<CurrentBootCount>%I64d</CurrentBootCount>\n", CurrentTPMBootCount);
+    wprintf_s(L"<CurrentBootCount>%I64d</CurrentBootCount>\n", CurrentTPMBootCount);
     PcpToolLevelPrefix(1);
-    wprintf(L"<CurrentEventCount>%I64d</CurrentEventCount>\n", CurrentTPMEventCount);
+    wprintf_s(L"<CurrentEventCount>%I64d</CurrentEventCount>\n", CurrentTPMEventCount);
     PcpToolLevelPrefix(1);
-    wprintf(L"<CurrentCounterId>%I64d</CurrentCounterId>\n", CurrentTPMCounterId);
+    wprintf_s(L"<CurrentCounterId>%I64d</CurrentCounterId>\n", CurrentTPMCounterId);
     PcpToolLevelPrefix(1);
-    wprintf(L"<InitialBootCount>%I64d</InitialBootCount>\n", InitialTPMBootCount);
+    wprintf_s(L"<InitialBootCount>%I64d</InitialBootCount>\n", InitialTPMBootCount);
     PcpToolLevelPrefix(1);
-    wprintf(L"<InitialEventCount>%I64d</InitialEventCount>\n", InitialTPMEventCount);
+    wprintf_s(L"<InitialEventCount>%I64d</InitialEventCount>\n", InitialTPMEventCount);
     PcpToolLevelPrefix(1);
-    wprintf(L"<InitialCounterId>%I64d</InitialCounterId>\n", InitialTPMCounterId);
-    wprintf(L"</PlatformCounters>\n");
+    wprintf_s(L"<InitialCounterId>%I64d</InitialCounterId>\n", InitialTPMCounterId);
+    wprintf_s(L"</PlatformCounters>\n");
 
 Cleanup:
     PcpToolCallResult(L"PcpToolGetPlatformCounters()", hr);
@@ -6555,18 +6555,18 @@ PcpToolGetPCRs(
         goto Cleanup;
     }
 
-    wprintf(L"<PCRs>\n");
+    wprintf_s(L"<PCRs>\n");
     for(UINT32 n = 0; n < 24; n++)
     {
         PcpToolLevelPrefix(1);
-        wprintf(L"<PCR Index=\"%02u\">", n);
+        wprintf_s(L"<PCR Index=\"%02u\">", n);
         for(UINT32 m = 0; m < 20; m++)
         {
-                wprintf(L"%02x", pcrTable[n * 20 + m]);
+                wprintf_s(L"%02x", pcrTable[n * 20 + m]);
         }
-        wprintf(L"</PCR>\n");
+        wprintf_s(L"</PCR>\n");
     }
-    wprintf(L"</PCRs>\n");
+    wprintf_s(L"</PCRs>\n");
 
 Cleanup:
     if(hProv != NULL)
@@ -6628,7 +6628,7 @@ PcpToolGetArchivedLog(
     }
     else
     {
-        wprintf(L"%s %s [OSBootCount] [OSResumeCount] {log file}\n",
+        wprintf_s(L"%s %s [OSBootCount] [OSResumeCount] {log file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -6665,7 +6665,7 @@ PcpToolGetArchivedLog(
     }
     else
     {
-        wprintf(L"%s %s [OSBootCount] [OSResumeCount] {log file}\n",
+        wprintf_s(L"%s %s [OSBootCount] [OSResumeCount] {log file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -6775,7 +6775,7 @@ This function will display the contents of a platform atestation blob.
     }
     else
     {
-        wprintf(L"%s %s [attestation file]\n",
+        wprintf_s(L"%s %s [attestation file]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -6796,45 +6796,45 @@ This function will display the contents of a platform atestation blob.
 
 
     // Output results
-    wprintf(L"<PlatformAttestation size=\"%u\">\n", cbAttestation);
+    wprintf_s(L"<PlatformAttestation size=\"%u\">\n", cbAttestation);
     if(FAILED(hr = PcpToolDisplayPlatformAttestation(pbAttestation, cbAttestation, 1)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<TCGLogProperties>\n");
+    wprintf_s(L"<TCGLogProperties>\n");
     PcpToolLevelPrefix(2);
-    wprintf(L"<EventCountStart>%I64u</EventCountStart>\n",
+    wprintf_s(L"<EventCountStart>%I64u</EventCountStart>\n",
             eventCountStartLocal);
     PcpToolLevelPrefix(2);
-    wprintf(L"<EventsIncrements>%I64u</EventIncrements>\n",
+    wprintf_s(L"<EventsIncrements>%I64u</EventIncrements>\n",
             eventCountIncrementsLocal);
     PcpToolLevelPrefix(2);
-    wprintf(L"<EventCountId>%I64u</EventCountId>\n", 
+    wprintf_s(L"<EventCountId>%I64u</EventCountId>\n", 
             eventCountIdLocal);
     PcpToolLevelPrefix(2);
-    wprintf(L"<PowerUpCount>%I64u</PowerUpCount>\n",
+    wprintf_s(L"<PowerUpCount>%I64u</PowerUpCount>\n",
             powerUpCountLocal);
     PcpToolLevelPrefix(2);
-    wprintf(L"<ContainsBootCount>%s</ContainsBootCount>\n",
+    wprintf_s(L"<ContainsBootCount>%s</ContainsBootCount>\n",
             (dwPropertyFlags &
              PCP_ATTESTATION_PROPERTIES_CONTAINS_BOOT_COUNT) ?
                  L"TRUE" :
                  L"FALSE");
     PcpToolLevelPrefix(2);
-    wprintf(L"<ContainsEventCount>%s</ContainsEventCount>\n",
+    wprintf_s(L"<ContainsEventCount>%s</ContainsEventCount>\n",
             (dwPropertyFlags &
              PCP_ATTESTATION_PROPERTIES_CONTAINS_EVENT_COUNT) ?
                  L"TRUE" :
                  L"FALSE");
     PcpToolLevelPrefix(2);
-    wprintf(L"<EventCountNonContiguous>%s</EventCountNonContiguous>\n",
+    wprintf_s(L"<EventCountNonContiguous>%s</EventCountNonContiguous>\n",
             (dwPropertyFlags &
              PCP_ATTESTATION_PROPERTIES_EVENT_COUNT_NON_CONTIGUOUS) ?
                  L"TRUE" :
                  L"FALSE");
     PcpToolLevelPrefix(2);
-    wprintf(L"<IntegrityServices>%s</IntegrityServices>\n",
+    wprintf_s(L"<IntegrityServices>%s</IntegrityServices>\n",
             (dwPropertyFlags & PCP_ATTESTATION_PROPERTIES_INTEGRITY_SERVICES_DISABLED) ?
                     L"DISABLED" :
                     L"ENABLED");
@@ -6844,77 +6844,77 @@ This function will display the contents of a platform atestation blob.
            PCP_ATTESTATION_PROPERTIES_TRANSITION_TO_WINLOAD)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<Transition>Winload</Transition>\n");
+            wprintf_s(L"<Transition>Winload</Transition>\n");
         }
         else if(dwPropertyFlags &
            PCP_ATTESTATION_PROPERTIES_TRANSITION_TO_WINRESUME)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<Transition>Winresume</Transition>\n");
+            wprintf_s(L"<Transition>Winresume</Transition>\n");
         }
         else if(dwPropertyFlags &
            PCP_ATTESTATION_PROPERTIES_TRANSITION_TO_OTHER)
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<Transition>Other</Transition>\n");
+            wprintf_s(L"<Transition>Other</Transition>\n");
         }
         else
         {
             PcpToolLevelPrefix(2);
-            wprintf(L"<Transition>Unspecified</Transition>\n");
+            wprintf_s(L"<Transition>Unspecified</Transition>\n");
         }
         PcpToolLevelPrefix(2);
-        wprintf(L"<BootDebugOn>%s</BootDebugOn>\n",
+        wprintf_s(L"<BootDebugOn>%s</BootDebugOn>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_BOOT_DEBUG_ON) ?
                      L"TRUE" :
                      L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<OsDebugOn>%s</OsDebugOn>\n",
+        wprintf_s(L"<OsDebugOn>%s</OsDebugOn>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_OS_DEBUG_ON) ?
                      L"TRUE" :
                      L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<CodeIntegrityOff>%s</CodeIntegrityOff>\n",
+        wprintf_s(L"<CodeIntegrityOff>%s</CodeIntegrityOff>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_CODEINTEGRITY_OFF) ?
                  L"TRUE" :
                  L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<TestsigningOn>%s</TestsigningOn>\n",
+        wprintf_s(L"<TestsigningOn>%s</TestsigningOn>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_TESTSIGNING_ON) ?
                      L"TRUE" :
                      L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<BitLockerUnlock>%s</BitLockerUnlock>\n",
+        wprintf_s(L"<BitLockerUnlock>%s</BitLockerUnlock>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_BITLOCKER_UNLOCK) ?
                      L"TRUE" :
                      L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<OsSafeMode>%s</OsSafeMode>\n",
+        wprintf_s(L"<OsSafeMode>%s</OsSafeMode>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_OS_SAFEMODE) ?
                      L"TRUE" :
                      L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<WinPE>%s</WinPE>\n",
+        wprintf_s(L"<WinPE>%s</WinPE>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_OS_WINPE) ?
                      L"TRUE" :
                      L"FALSE");
         PcpToolLevelPrefix(2);
-        wprintf(L"<Hypervisor>%s</Hypervisor>\n",
+        wprintf_s(L"<Hypervisor>%s</Hypervisor>\n",
                 (dwPropertyFlags &
                  PCP_ATTESTATION_PROPERTIES_OS_HV) ?
                      L"TRUE" :
                      L"FALSE");
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"</TCGLogProperties>\n");
-    wprintf(L"</PlatformAttestation>\n");
+    wprintf_s(L"</TCGLogProperties>\n");
+    wprintf_s(L"</PlatformAttestation>\n");
 
 Cleanup:
     ZeroAndFree((PVOID*)&pbAttestation, cbAttestation);
@@ -6980,7 +6980,7 @@ proof.
     }
     else
     {
-        wprintf(L"%s %s [attestation file] [aikpub file] {nonce}\n",
+        wprintf_s(L"%s %s [attestation file] [aikpub file] {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7013,7 +7013,7 @@ proof.
     }
     else
     {
-        wprintf(L"%s %s [attestation file] [aikpub file] {nonce}\n",
+        wprintf_s(L"%s %s [attestation file] [aikpub file] {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7082,7 +7082,7 @@ proof.
     }
 
     // Output
-    wprintf(L"Verified - OK.\n");
+    wprintf_s(L"Verified - OK.\n");
 
 Cleanup:
     if(hAik != NULL)
@@ -7151,7 +7151,7 @@ PcpToolCreatePlatformAttestationFromLog(
     }
     else
     {
-        wprintf(L"%s %s [log file] {attestation file} {aik name}\n",
+        wprintf_s(L"%s %s [log file] {attestation file} {aik name}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7209,9 +7209,9 @@ PcpToolCreatePlatformAttestationFromLog(
 
     // Output results
     if(aikName != NULL)
-        wprintf(L"AIK identifier for Trustpoint: '%s'. Log converted - OK!\n", aikName);
+        wprintf_s(L"AIK identifier for Trustpoint: '%s'. Log converted - OK!\n", aikName);
     else
-        wprintf(L"AIK identifier for Trustpoint is NULL.");
+        wprintf_s(L"AIK identifier for Trustpoint is NULL.");
 
 Cleanup:
     if(aikName != NULL)
@@ -7255,7 +7255,7 @@ PcpToolGetKeyAttestationFromKey(
     }
     else
     {
-        wprintf(L"%s %s [key name] {attest} {AIK name}\n",
+        wprintf_s(L"%s %s [key name] {attest} {AIK name}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7332,17 +7332,17 @@ PcpToolGetKeyAttestationFromKey(
     }
 
     // Output results
-    wprintf(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, szAikName);
+    wprintf_s(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, szAikName);
     for(UINT32 n = 0; n < 20; n++)
     {
-            wprintf(L"%02x", aikDigest[n]);
+            wprintf_s(L"%02x", aikDigest[n]);
     }
-    wprintf(L"\">\n");
+    wprintf_s(L"\">\n");
     if(FAILED(hr = PcpToolDisplayKeyAttestation(pbAttestation, cbAttestation, 1)))
     {
         goto Cleanup;
     }
-    wprintf(L"</KeyAttestation>\n");
+    wprintf_s(L"</KeyAttestation>\n");
 
 
 Cleanup:
@@ -7390,7 +7390,7 @@ PcpToolGetKeyAttestation(
     }
     else
     {
-        wprintf(L"%s %s [key name] [aik name] {exportfile} {nonce} {keyAuth} {aikAuth}\n",
+        wprintf_s(L"%s %s [key name] [aik name] {exportfile} {nonce} {keyAuth} {aikAuth}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7404,7 +7404,7 @@ PcpToolGetKeyAttestation(
     }
     else
     {
-        wprintf(L"%s %s [key name] [aik name] {exportfile} {nonce} {keyAuth} {aikAuth}\n",
+        wprintf_s(L"%s %s [key name] [aik name] {exportfile} {nonce} {keyAuth} {aikAuth}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7573,17 +7573,17 @@ PcpToolGetKeyAttestation(
     }
 
     // Output results
-    /*wprintf(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, aikName);
+    /*wprintf_s(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, aikName);
     for(UINT32 n = 0; n < 20; n++)
     {
-            wprintf(L"%02x", aikDigest[n]);
+            wprintf_s(L"%02x", aikDigest[n]);
     }
-    wprintf(L"\">\n");*/
+    wprintf_s(L"\">\n");*/
     if(FAILED(hr = PcpToolDisplayKeyAttestation(pbAttestation, cbAttestation, 1)))
     {
         goto Cleanup;
     }
-    //wprintf(L"</KeyAttestation>\n");
+    //wprintf_s(L"</KeyAttestation>\n");
 
 Cleanup:
     if(hKey != NULL)
@@ -7663,7 +7663,7 @@ PcpToolValidateKeyAttestation(
     }
     else
     {
-        wprintf(L"%s %s [attest] [aikpub file] {nonce} {pcrMask} {pcrs}\n",
+        wprintf_s(L"%s %s [attest] [aikpub file] {nonce} {pcrMask} {pcrs}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7696,7 +7696,7 @@ PcpToolValidateKeyAttestation(
     }
     else
     {
-        wprintf(L"%s %s [attestation file] [aikpub file] {nonce} {pcrMask} {pcrs}\n",
+        wprintf_s(L"%s %s [attestation file] [aikpub file] {nonce} {pcrMask} {pcrs}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7734,7 +7734,7 @@ PcpToolValidateKeyAttestation(
     {
         if(swscanf_s(argv[5], L"%x", &pcrMask) == 0)
         {
-            wprintf(L"%s %s [attestation file] [aikpub file] {nonce} {pcrMask} {pcrs}\n",
+            wprintf_s(L"%s %s [attestation file] [aikpub file] {nonce} {pcrMask} {pcrs}\n",
                     argv[0],
                     argv[1]);
             goto Cleanup;
@@ -7804,7 +7804,7 @@ PcpToolValidateKeyAttestation(
     }
 
     // Output
-    wprintf(L"Verified - OK.\n");
+    wprintf_s(L"Verified - OK.\n");
 
 Cleanup:
     if(hAik != NULL)
@@ -7875,7 +7875,7 @@ PcpToolGetKeyProperties(
     }
     else
     {
-        wprintf(L"%s %s [attest]\n",
+        wprintf_s(L"%s %s [attest]\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -7932,40 +7932,40 @@ PcpToolGetKeyProperties(
     }
 
     // Output results
-    wprintf(L"<PCPKey>\n");
+    wprintf_s(L"<PCPKey>\n");
     if(FAILED(hr = PcpToolDisplayKey(NULL, pbPubKey, cbPubKey, 1)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<NON_MIGRATABLE>%s</NON_MIGRATABLE>\n", (propertyFlags & PCP_KEY_PROPERTIES_NON_MIGRATABLE) ? L"TRUE" : L"FALSE");
+    wprintf_s(L"<NON_MIGRATABLE>%s</NON_MIGRATABLE>\n", (propertyFlags & PCP_KEY_PROPERTIES_NON_MIGRATABLE) ? L"TRUE" : L"FALSE");
     PcpToolLevelPrefix(1);
-    wprintf(L"<PIN_PROTECTED>%s</PIN_PROTECTED>\n", (propertyFlags & PCP_KEY_PROPERTIES_PIN_PROTECTED) ? L"TRUE" : L"FALSE");
+    wprintf_s(L"<PIN_PROTECTED>%s</PIN_PROTECTED>\n", (propertyFlags & PCP_KEY_PROPERTIES_PIN_PROTECTED) ? L"TRUE" : L"FALSE");
     PcpToolLevelPrefix(1);
-    wprintf(L"<PCR_PROTECTED>%s</PCR_PROTECTED>\n", (propertyFlags & PCP_KEY_PROPERTIES_PCR_PROTECTED) ? L"TRUE" : L"FALSE");
+    wprintf_s(L"<PCR_PROTECTED>%s</PCR_PROTECTED>\n", (propertyFlags & PCP_KEY_PROPERTIES_PCR_PROTECTED) ? L"TRUE" : L"FALSE");
     PcpToolLevelPrefix(1);
     switch(propertyFlags & 0x0000FFFF)
     {
         case PCP_KEY_PROPERTIES_SIGNATURE_KEY:
-            wprintf(L"<KEY_USAGE>SIGNATURE_KEY</KEY_USAGE>\n");
+            wprintf_s(L"<KEY_USAGE>SIGNATURE_KEY</KEY_USAGE>\n");
             break;
         case PCP_KEY_PROPERTIES_ENCRYPTION_KEY:
-            wprintf(L"<KEY_USAGE>ENCRYPTION_KEY</KEY_USAGE>\n");
+            wprintf_s(L"<KEY_USAGE>ENCRYPTION_KEY</KEY_USAGE>\n");
             break;
         case PCP_KEY_PROPERTIES_GENERIC_KEY:
-            wprintf(L"<KEY_USAGE>GENERIC_KEY</KEY_USAGE>\n");
+            wprintf_s(L"<KEY_USAGE>GENERIC_KEY</KEY_USAGE>\n");
             break;
         case PCP_KEY_PROPERTIES_STORAGE_KEY:
-            wprintf(L"<KEY_USAGE>STORAGE_KEY</KEY_USAGE>\n");
+            wprintf_s(L"<KEY_USAGE>STORAGE_KEY</KEY_USAGE>\n");
             break;
         case PCP_KEY_PROPERTIES_IDENTITY_KEY:
-            wprintf(L"<KEY_USAGE>IDENTITY_KEY</KEY_USAGE>\n");
+            wprintf_s(L"<KEY_USAGE>IDENTITY_KEY</KEY_USAGE>\n");
             break;
         default:
-            wprintf(L"<KEY_USAGE>UNSPECIFIED</KEY_USAGE>\n");
+            wprintf_s(L"<KEY_USAGE>UNSPECIFIED</KEY_USAGE>\n");
             break;
     }
-    wprintf(L"</PCPKey>\n");
+    wprintf_s(L"</PCPKey>\n");
 
 Cleanup:
     ZeroAndFree((PVOID*)&pbAttestation, cbAttestation);
@@ -8021,7 +8021,7 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 	else
 	{
-		wprintf(L"%s %s [pubkey file] [data] {blob file}\n",
+		wprintf_s(L"%s %s [pubkey file] [data] {blob file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8035,7 +8035,7 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 	else
 	{
-		wprintf(L"%s %s [pubkey file] [data] {blob file}\n",
+		wprintf_s(L"%s %s [pubkey file] [data] {blob file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8112,12 +8112,12 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 
 	// Output the result
-	wprintf(L"<Blob size=\"%u\">\n  ", cbBlob);
+	wprintf_s(L"<Blob size=\"%u\">\n  ", cbBlob);
 	for (UINT32 n = 0; n < cbBlob; n++)
 	{
-		wprintf(L"%02x", pbBlob[n]);
+		wprintf_s(L"%02x", pbBlob[n]);
 	}
-	wprintf(L"\n</Blob>\n");
+	wprintf_s(L"\n</Blob>\n");
 
 Cleanup:
 	if (hKey != NULL)
@@ -8167,7 +8167,7 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [blob file] {usageAuth}\n",
+		wprintf_s(L"%s %s [key name] [blob file] {usageAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8201,7 +8201,7 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [blob file] {usageAuth}\n",
+		wprintf_s(L"%s %s [key name] [blob file] {usageAuth}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8274,7 +8274,7 @@ _In_reads_(argc) WCHAR* argv[]
 	}
 
 	// Output secret
-	wprintf(L"<Secret size=\"%u\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
+	wprintf_s(L"<Secret size=\"%u\">%s</Secret>\n", cbSecret, (PWCHAR)pbSecret);
 
 Cleanup:
 	if (hKey != NULL)
@@ -8333,7 +8333,7 @@ signature to a file if provided.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [data file] {usageAuth} {signature file}\n",
+		wprintf_s(L"%s %s [key name] [data file] {usageAuth} {signature file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8367,7 +8367,7 @@ signature to a file if provided.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [data file] {usageAuth} {signature file}\n",
+		wprintf_s(L"%s %s [key name] [data file] {usageAuth} {signature file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8510,7 +8510,7 @@ decrypted data to a file if provided.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [blob file] {usageAuth} {secret file}\n",
+		wprintf_s(L"%s %s [key name] [blob file] {usageAuth} {secret file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8544,7 +8544,7 @@ decrypted data to a file if provided.
 	}
 	else
 	{
-		wprintf(L"%s %s [key name] [blob file] {usageAuth} {secret file}\n",
+		wprintf_s(L"%s %s [key name] [blob file] {usageAuth} {secret file}\n",
 			argv[0],
 			argv[1]);
 		hr = E_INVALIDARG;
@@ -8778,7 +8778,7 @@ PcpToolWrapPlatformKey(
     }
     else
     {
-        wprintf(L"%s %s [cert] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n",
+        wprintf_s(L"%s %s [cert] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -8811,7 +8811,7 @@ PcpToolWrapPlatformKey(
     }
     else
     {
-        wprintf(L"%s %s [key Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n",
+        wprintf_s(L"%s %s [key Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -8835,7 +8835,7 @@ PcpToolWrapPlatformKey(
     {
         if(swscanf_s(argv[6], L"%x", &pcrMask) == 0)
         {
-            wprintf(L"%s %s [key Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n",
+            wprintf_s(L"%s %s [key Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n",
                     argv[0],
                     argv[1]);
             goto Cleanup;
@@ -8950,7 +8950,7 @@ PcpToolWrapPlatformKey(
         cbOutput = 0;
 
         LPWSTR blobType[] = {L"", L"TPM1.2", L"TPM2.0"};
-        wprintf(L"Keyblob created for %s - OK.\n", blobType[n]);
+        wprintf_s(L"Keyblob created for %s - OK.\n", blobType[n]);
     }
 
 Cleanup:
@@ -9059,7 +9059,7 @@ PcpToolImportPlatformKey(
     }
     else
     {
-        wprintf(L"%s %s [key file] [key name] {cert file}\n",
+        wprintf_s(L"%s %s [key file] [key name] {cert file}\n",
                     argv[0],
                     argv[1]);
         hr = E_INVALIDARG;
@@ -9075,7 +9075,7 @@ PcpToolImportPlatformKey(
     }
     else
     {
-        wprintf(L"%s %s [key file] [key name] {cert file}\n",
+        wprintf_s(L"%s %s [key file] [key name] {cert file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -9189,7 +9189,7 @@ PcpToolImportPlatformKey(
     }
 
     // Output results
-    wprintf(L"Ok.\n");
+    wprintf_s(L"Ok.\n");
 
 Cleanup:
     PcpToolCallResult(L"PcpToolImportPlatformKey()", hr);
@@ -9557,17 +9557,17 @@ PcpToolGetVscKeyAttestationFromKey(
     }
 
     // Output results
-    wprintf(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, szAikName);
+    wprintf_s(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, szAikName);
     for(UINT32 n = 0; n < 20; n++)
     {
-            wprintf(L"%02x", aikDigest[n]);
+            wprintf_s(L"%02x", aikDigest[n]);
     }
-    wprintf(L"\">\n");
+    wprintf_s(L"\">\n");
     if(FAILED(hr = PcpToolDisplayKeyAttestation(pbAttestation, cbAttestation, 1)))
     {
         goto Cleanup;
     }
-    wprintf(L"</KeyAttestation>\n");
+    wprintf_s(L"</KeyAttestation>\n");
 
 Cleanup:
     ZeroAndFree((PVOID*)&pbAttestation, cbAttestation);
@@ -9701,7 +9701,7 @@ PcpToolIssueEkCert(
     }
     else
     {
-        wprintf(L"%s %s [EKPub File] [Subject Name] {Cert file}\n",
+        wprintf_s(L"%s %s [EKPub File] [Subject Name] {Cert file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -9715,7 +9715,7 @@ PcpToolIssueEkCert(
     }
     else
     {
-        wprintf(L"%s %s [EKPub File] [Subject Name] {Cert file}\n",
+        wprintf_s(L"%s %s [EKPub File] [Subject Name] {Cert file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -9811,7 +9811,7 @@ PcpToolIssueEkCert(
         }
     }
 
-    wprintf(L"OK.");
+    wprintf_s(L"OK.");
 
 Cleanup:
     if(pCaCert != NULL)
@@ -9922,7 +9922,7 @@ that encrypts the certificate for the AIK.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n",
+        wprintf_s(L"%s %s [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -9951,7 +9951,7 @@ that encrypts the certificate for the AIK.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n",
+        wprintf_s(L"%s %s [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -9965,7 +9965,7 @@ that encrypts the certificate for the AIK.
     }
     else
     {
-        wprintf(L"%s %s [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n",
+        wprintf_s(L"%s %s [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -10177,7 +10177,7 @@ that encrypts the certificate for the AIK.
     }
 
     // Store the activation and cert if required
-    if(idBindingFile != NULL)
+    if(activationBlobFile != NULL)
     {
         if(FAILED(hr = PcpToolWriteFile(
                                 activationBlobFile,
@@ -10210,32 +10210,32 @@ that encrypts the certificate for the AIK.
     }
 
     // Output results
-    wprintf(L"<Activation>\n");
+    wprintf_s(L"<Activation>\n");
     if(FAILED(hr = PcpToolDisplayKey(L"AIK", pbAikPub, cbAikPub, 1)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(1);
-    wprintf(L"<ActivationBlob size=\"%u\">\n", cbActivationBlob);
+    wprintf_s(L"<ActivationBlob size=\"%u\">\n", cbActivationBlob);
     PcpToolLevelPrefix(2);
     for(UINT32 n = 0; n < cbActivationBlob; n++)
     {
-        wprintf(L"%02x", pbActivationBlob[n]);
+        wprintf_s(L"%02x", pbActivationBlob[n]);
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"</ActivationBlob>\n");
+    wprintf_s(L"</ActivationBlob>\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"<AIKCert size=\"%u\">\n", cbCertOut);
+    wprintf_s(L"<AIKCert size=\"%u\">\n", cbCertOut);
     PcpToolLevelPrefix(2);
     for(UINT32 n = 0; n < cbCertOut; n++)
     {
-        wprintf(L"%02x", pbCertOut[n]);
+        wprintf_s(L"%02x", pbCertOut[n]);
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(1);
-    wprintf(L"</AIKCert>\n");
-    wprintf(L"</Activation>\n");
+    wprintf_s(L"</AIKCert>\n");
+    wprintf_s(L"</Activation>\n");
 
 Cleanup:
     if(pCaCert != NULL)
@@ -10323,7 +10323,7 @@ system.
     }
     else
     {
-        wprintf(L"%s %s [key name] [Blob file] {cert file}\n",
+        wprintf_s(L"%s %s [key name] [Blob file] {cert file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -10377,7 +10377,7 @@ system.
     }
     else
     {
-        wprintf(L"%s %s [key name] [Blob file] {cert file}\n",
+        wprintf_s(L"%s %s [key name] [Blob file] {cert file}\n",
                 argv[0],
                 argv[1]);
         hr = E_INVALIDARG;
@@ -10501,7 +10501,7 @@ system.
         goto Cleanup;
     }
 
-    wprintf(L"OK.");
+    wprintf_s(L"OK.");
 
 Cleanup:
     if(hKey != NULL)
@@ -10535,10 +10535,10 @@ HRESULT PcpToolNVInfo(
 	{
 		if (swscanf_s(argv[2], L"%x", &nvIndex) == 0)
 		{
-			wprintf(L"%s %s [size] {nv_index in hex}\n", argv[0], argv[1]);
+			wprintf_s(L"%s %s [size] {nv_index in hex}\n", argv[0], argv[1]);
 			goto Cleanup;
 		}
-		//wprintf(L" argv[2]: %s, %x, %u", argv[2], nvIndex, nvIndex);
+		//wprintf_s(L" argv[2]: %s, %x, %u", argv[2], nvIndex, nvIndex);
 	}
 
 	hr = TpmNVInfo(nvIndex, nvinfo, cbNvinfo, &cbInfo);
@@ -10559,7 +10559,7 @@ HRESULT PcpToolNVRead(
 
 
 	if (argc < 3) {
-		wprintf(L"Usage: Pcptool nvread [nvIndex]\n");
+		wprintf_s(L"Usage: Pcptool nvread [nvIndex]\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
@@ -10572,14 +10572,14 @@ HRESULT PcpToolNVRead(
 	/* call nvreadvalue to read 20 bytes */
 	hr = TpmNVReadValue(nvIndex, pbData, cbData, &rspDLen);
 	if (hr != S_OK) {
-		wprintf(L"tpm nv readvalue failed with return value %lu\n", hr);
+		wprintf_s(L"tpm nv readvalue failed with return value %lu\n", hr);
 	}
 	else {
-		//wprintf(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
+		//wprintf_s(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
 		for (UINT32 i = 0; i < cbData; i++) {
-			wprintf(L"%02x", pbData[i]);
+			wprintf_s(L"%02x", pbData[i]);
 		}
-		//wprintf(L"\n");
+		//wprintf_s(L"\n");
 	}
 Cleanup:
 	return hr;
@@ -10600,7 +10600,7 @@ HRESULT PcpToolNVWrite(
 	UINT32 cbData = 0;
 
 	if (argc < 5) {
-		wprintf(L"Usage: Pcptool nvwrite [nvIndex] [nvramPassword] [data in hex]\n");
+		wprintf_s(L"Usage: Pcptool nvwrite [nvIndex] [nvramPassword] [data in hex]\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
@@ -10634,10 +10634,10 @@ HRESULT PcpToolNVWrite(
 	/* call the same function TPMNVWrite */
 	hr = TpmNVWriteValueAuth(nvIndex, (PBYTE)&nvAuthDigest[0], 20, pbData, cbData);
 	if (hr != S_OK) {
-		wprintf(L"tpm nv writevalueauth failed with return value %lu\n", hr);
+		wprintf_s(L"tpm nv writevalueauth failed with return value %lu\n", hr);
 	}
 	else {
-		wprintf(L"tpm nv writevalueauth succeeds!\n");
+		wprintf_s(L"tpm nv writevalueauth succeeds!\n");
 	}
 Cleanup:
 	return hr;
@@ -10657,7 +10657,7 @@ HRESULT PcpToolNVDefine(
 	UINT32 result = 0;
 
 	if (argc < 6) {
-		wprintf(L"Usage: Pcptool nvdefine [index] [size] [nvramPassword] [permissions]\n");
+		wprintf_s(L"Usage: Pcptool nvdefine [index] [size] [nvramPassword] [permissions]\n");
 		goto Cleanup;
 	}
 	if (swscanf_s(argv[2], L"%x", &nvIndex) == 0) 	//Parameter: nv_index
@@ -10671,7 +10671,7 @@ HRESULT PcpToolNVDefine(
 	nvPassword = argv[4];
 	permissions = argv[5];
 
-	//wprintf(L"nvpasswd: %s, permission: %s\n", nvPassword, permissions);
+	//wprintf_s(L"nvpasswd: %s, permission: %s\n", nvPassword, permissions);
 
 	if (FAILED(hr = TpmAttiShaHash(
 		BCRYPT_SHA1_ALGORITHM,
@@ -10702,19 +10702,19 @@ HRESULT PcpToolNVDefine(
 	{
 		goto Cleanup;
 	}
-	wprintf(L" oAuth as the SHA1 hash: ");
+	wprintf_s(L" oAuth as the SHA1 hash: ");
 	for (UINT32 i = 0; i < 20; i++) {
-		wprintf(L"%02x", OAuthDigest[i]);
+		wprintf_s(L"%02x", OAuthDigest[i]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 	*/
 
 	hr = TpmNVDefineSpace(nvIndex, nvIndexSize, (PBYTE)&nvAuthDigest[0], sizeof(nvAuthDigest), permissions);
 	if (hr != S_OK) {
-		wprintf(L"tpm nv_define failed with return code %lu\n", hr);
+		wprintf_s(L"tpm nv_define failed with return code %lu\n", hr);
 	}
 	else {
-		wprintf(L"tpm nv_define succeeds!\n");
+		wprintf_s(L"tpm nv_define succeeds!\n");
 	}
 Cleanup:
 	return hr;
@@ -10732,7 +10732,7 @@ HRESULT PcpToolNVRelease(
 	UINT32 result = 0;
 
 	if (argc < 3) {
-		wprintf(L"Usage: Pcptool nvdefine [index]\n");
+		wprintf_s(L"Usage: Pcptool nvdefine [index]\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
@@ -10758,10 +10758,10 @@ HRESULT PcpToolNVRelease(
 
 	hr = TpmNVReleaseSpace(nvIndex, nvAuthDigest, sizeof(nvAuthDigest)); 
 	if (hr != S_OK) {
-		wprintf(L"tpm nvrelease failed with return code lu\n", hr);
+		wprintf_s(L"tpm nvrelease failed with return code lu\n", hr);
 	}
 	else {
-		wprintf(L"tpm nvrelease succeeds!\n");
+		wprintf_s(L"tpm nvrelease succeeds!\n");
 	}
 Cleanup:
 	return hr;
@@ -10782,7 +10782,7 @@ HRESULT PcpToolPCRExtend(
 	UINT32 val = 0;
 
 	if (argc < 4) {
-		wprintf(L"Usage: Pcptool pcrextend [pcrIndex] [digest in hex]\n");
+		wprintf_s(L"Usage: Pcptool pcrextend [pcrIndex] [digest in hex]\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
@@ -10792,21 +10792,21 @@ HRESULT PcpToolPCRExtend(
 		goto Cleanup;
 	}
 	if (pcrIndex > 23) {
-		wprintf(L"PCR index should be in the range of 0-23\n");
+		wprintf_s(L"PCR index should be in the range of 0-23\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
 	digestHex = argv[3]; // the digest in Hex
-	//wprintf(L"digestHex size: %d\n", wcsnlen_s(digestHex, ARG_MAX));
+	//wprintf_s(L"digestHex size: %d\n", wcsnlen_s(digestHex, ARG_MAX));
 	if (wcsnlen_s(digestHex, ARG_MAX) != 40) {
-		wprintf(L"Invalid length of digest value in hex: %d bytes\n", val);
+		wprintf_s(L"Invalid length of digest value in hex: %d bytes\n", val);
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
 
 	cbDigest = hexStringToByteArray(digestHex, pbDigest);
 	if (cbDigest != 20) {
-		wprintf(L"PCR new digest value should be 20 bytes\n");
+		wprintf_s(L"PCR new digest value should be 20 bytes\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
@@ -10814,14 +10814,14 @@ HRESULT PcpToolPCRExtend(
 	/* call the same function TPMNVWrite */
 	hr = TpmPCRExtend(pcrIndex, pbDigest, pbNewDigest);
 	if (hr != S_OK) {
-		wprintf(L"tpm pcrextend failed with return value %lu\n", hr);
+		wprintf_s(L"tpm pcrextend failed with return value %lu\n", hr);
 	}
 	else {
-		wprintf(L"tpm pcrextend succeeds with new value: ");
+		wprintf_s(L"tpm pcrextend succeeds with new value: ");
 		for (UINT32 i = 0; i < 20; i++) {
-			wprintf(L"%02x", pbDigest[i]);
+			wprintf_s(L"%02x", pbDigest[i]);
 		}
-		wprintf(L"\n");
+		wprintf_s(L"\n");
 	}
 Cleanup:
 	return hr;

@@ -27,90 +27,90 @@ void
 PcpToolGetHelp(
     )
 {
-    wprintf(L"Tpmtool version 1.0\n\n");
+    wprintf_s(L"Tpmtool version 1.0\n\n");
 
-    wprintf(L"Commands:\n");
-    wprintf(L"\nGeneral:\n");
-    wprintf(L" GetVersion\n");
-	wprintf(L" GetTpmVersion\n");
+    wprintf_s(L"Commands:\n");
+    wprintf_s(L"\nGeneral:\n");
+    wprintf_s(L" GetVersion\n");
+	wprintf_s(L" GetTpmVersion\n");
 
-    wprintf(L"\nRNG:\n");
-    wprintf(L" GetRandom [size] {seed data} {output file}\n");
+    wprintf_s(L"\nRNG:\n");
+    wprintf_s(L" GetRandom [size] {seed data} {output file}\n");
 
-    wprintf(L"\nPersistent TPM Keys:\n");
-    wprintf(L" GetEK {key file}\n");
-    wprintf(L" GetEKCert {cert file}\n");
-    wprintf(L" GetNVEKCert {cert file}\n");
-    wprintf(L" AddEKCert [cert file]\n");
-    wprintf(L" ExtractEK [cert file] {key file}\n");
-    wprintf(L" GetSRK {key file}\n");
-    wprintf(L" IssueEKCert [EKPub File] [Subject Name] {Cert file}\n");
+    wprintf_s(L"\nPersistent TPM Keys:\n");
+    wprintf_s(L" GetEK {key file}\n");
+    wprintf_s(L" GetEKCert {cert file}\n");
+    wprintf_s(L" GetNVEKCert {cert file}\n");
+    wprintf_s(L" AddEKCert [cert file]\n");
+    wprintf_s(L" ExtractEK [cert file] {key file}\n");
+    wprintf_s(L" GetSRK {key file}\n");
+    wprintf_s(L" IssueEKCert [EKPub File] [Subject Name] {Cert file}\n");
 
-    wprintf(L"\nPCPKey Management:\n");
-    wprintf(L" EnumerateKeys\n");
-    wprintf(L" GetCertStore\n");
-    wprintf(L" CreateKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
-	wprintf(L" CreateSigningKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
-	wprintf(L" CreateBindingKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
-    wprintf(L" ImportKey [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
-	wprintf(L" ImportKeybyOpaqueBlob [opaque blob] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
-    wprintf(L" ExportKey [key name] [migrationAuth] {key file}\n");
-    wprintf(L" ChangeKeyUsageAuth [key name] [usageAuth] [newUsageAuth]\n");
-    wprintf(L" DeleteKey [key name]\n");
-    wprintf(L" GetPubKey [key name] {key File}\n");
-    wprintf(L" Encrypt [pubkey file] [data] {blob file}\n");
-    wprintf(L" Decrypt [key name] [blob file] {usageAuth}\n");
-	wprintf(L" Sign [key name] [data file] {usageAuth} {signature file}\n");
-	wprintf(L" Unbind [key name] [blob file] {usageAuth} {secret file}\n");
+    wprintf_s(L"\nPCPKey Management:\n");
+    wprintf_s(L" EnumerateKeys\n");
+    wprintf_s(L" GetCertStore\n");
+    wprintf_s(L" CreateKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
+	wprintf_s(L" CreateSigningKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
+	wprintf_s(L" CreateBindingKey [key name] {usageAuth | @ | ! } {migrationAuth} {pcrMask} {pcrs}\n");
+    wprintf_s(L" ImportKey [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
+	wprintf_s(L" ImportKeybyOpaqueBlob [opaque blob] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
+    wprintf_s(L" ExportKey [key name] [migrationAuth] {key file}\n");
+    wprintf_s(L" ChangeKeyUsageAuth [key name] [usageAuth] [newUsageAuth]\n");
+    wprintf_s(L" DeleteKey [key name]\n");
+    wprintf_s(L" GetPubKey [key name] {key File}\n");
+    wprintf_s(L" Encrypt [pubkey file] [data] {blob file}\n");
+    wprintf_s(L" Decrypt [key name] [blob file] {usageAuth}\n");
+	wprintf_s(L" Sign [key name] [data file] {usageAuth} {signature file}\n");
+	wprintf_s(L" Unbind [key name] [blob file] {usageAuth} {secret file}\n");
 
-    wprintf(L"\nAIK Management:\n");
-    wprintf(L" CreateAIK [key name] {idBinding file} {nonce} {usageAuth | @ | ! }\n");
-	wprintf(L" ImportAIK [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
-	wprintf(L" CollateIdentityRequest [key name] [nonce | privCA] {usageAuth | @ | ! }\n");
-	wprintf(L" CollateIdentityRequest2 [key name] [nonce | privCA] {usageAuth | @ | ! }\n");
-    wprintf(L" GetPubAIK [idBinding file] {key File}\n");
-    wprintf(L" ChallengeAIK [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n");
-    wprintf(L" ActivateAIK [key name] [Blob file]\n");
-	wprintf(L" ActivateIdentity [key name] [Blob]\n");
-    wprintf(L" PrivacyCAChallenge [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n");
-    wprintf(L" PrivacyCAActivate [key name] [Blob file] {cert file}\n");
+    wprintf_s(L"\nAIK Management:\n");
+    wprintf_s(L" CreateAIK [key name] {idBinding file} {nonce} {usageAuth | @ | ! }\n");
+	wprintf_s(L" ImportAIK [key file] [key name] {usageAuth | @ | ! } {migrationAuth}\n");
+	wprintf_s(L" CollateIdentityRequest [key name] [nonce | privCA] {usageAuth | @ | ! }\n");
+	wprintf_s(L" CollateIdentityRequest2 [key name] [nonce | privCA] {usageAuth | @ | ! }\n");
+    wprintf_s(L" GetPubAIK [idBinding file] {key File}\n");
+    wprintf_s(L" ChallengeAIK [idBinding file] [EKPub File] [secret] {Blob file} {nonce}\n");
+    wprintf_s(L" ActivateAIK [key name] [Blob file]\n");
+	wprintf_s(L" ActivateIdentity [key name] [Blob]\n");
+    wprintf_s(L" PrivacyCAChallenge [idBinding file] [EKPub File] [Subject] {Blob file} {nonce}\n");
+    wprintf_s(L" PrivacyCAActivate [key name] [Blob file] {cert file}\n");
 
-    wprintf(L"\nPlatform Configuration:\n");
-    wprintf(L" GetPlatformCounters\n");
-    wprintf(L" GetPCRs {pcrs file}\n");
-    wprintf(L" GetLog [export file]\n");
-    wprintf(L" GetArchivedLog [OsBootCount : @] [OsResumeCount : @] {export file}\n");
-    wprintf(L" DecodeLog [log file]\n");
-    wprintf(L" RegisterAIK [key name]\n");
-    wprintf(L" EnumerateAIK\n");
+    wprintf_s(L"\nPlatform Configuration:\n");
+    wprintf_s(L" GetPlatformCounters\n");
+    wprintf_s(L" GetPCRs {pcrs file}\n");
+    wprintf_s(L" GetLog [export file]\n");
+    wprintf_s(L" GetArchivedLog [OsBootCount : @] [OsResumeCount : @] {export file}\n");
+    wprintf_s(L" DecodeLog [log file]\n");
+    wprintf_s(L" RegisterAIK [key name]\n");
+    wprintf_s(L" EnumerateAIK\n");
 
-    wprintf(L"\nPlatform Attestation:\n");
-    wprintf(L" GetPlatformAttestation [aik name] {attestation file} {nonce} {aikAuth}\n");
-	wprintf(L" AikQuote [aik name] {attestation file} {nonce} {aikAuth}\n");
-    wprintf(L" CreatePlatformAttestationFromLog [log file] {attestation file} {aik name}\n");
-    wprintf(L" DisplayPlatformAttestationFile [attestation file]\n");
-    wprintf(L" ValidatePlatformAttestation [attestation file] [aikpub file] {nonce}\n");
+    wprintf_s(L"\nPlatform Attestation:\n");
+    wprintf_s(L" GetPlatformAttestation [aik name] {attestation file} {nonce} {aikAuth}\n");
+	wprintf_s(L" AikQuote [aik name] {attestation file} {nonce} {aikAuth}\n");
+    wprintf_s(L" CreatePlatformAttestationFromLog [log file] {attestation file} {aik name}\n");
+    wprintf_s(L" DisplayPlatformAttestationFile [attestation file]\n");
+    wprintf_s(L" ValidatePlatformAttestation [attestation file] [aikpub file] {nonce}\n");
 
-    wprintf(L"\nKey Attestation:\n");
-    wprintf(L" GetKeyAttestation [key name] [aik name] {attest} {nonce} {keyAuth} {aikAuth}\n");
-    wprintf(L" GetKeyAttestationFromKey [key name] {attest} {AIK name}\n");
-    wprintf(L" ValidateKeyAttestation [attest] [aikpub file] {nonce} {pcrMask} {pcrs}\n");
-    wprintf(L" GetKeyProperties [attest]\n");
+    wprintf_s(L"\nKey Attestation:\n");
+    wprintf_s(L" GetKeyAttestation [key name] [aik name] {attest} {nonce} {keyAuth} {aikAuth}\n");
+    wprintf_s(L" GetKeyAttestationFromKey [key name] {attest} {AIK name}\n");
+    wprintf_s(L" ValidateKeyAttestation [attest] [aikpub file] {nonce} {pcrMask} {pcrs}\n");
+    wprintf_s(L" GetKeyProperties [attest]\n");
 
-    wprintf(L"\nVSC Attestation:\n");
-    wprintf(L" GetVscKeyAttestationFromKey {attest} {AIK name}\n");
+    wprintf_s(L"\nVSC Attestation:\n");
+    wprintf_s(L" GetVscKeyAttestationFromKey {attest} {AIK name}\n");
 
-    wprintf(L"\nKey Hostage:\n");
-    wprintf(L" WrapKey [cert Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n");
-    wprintf(L" ImportPlatformKey [key file] [key name] {cert file}\n");
+    wprintf_s(L"\nKey Hostage:\n");
+    wprintf_s(L" WrapKey [cert Name] [storagePub file] {key file} {usageAuth} {pcrMask} {pcrs}\n");
+    wprintf_s(L" ImportPlatformKey [key file] [key name] {cert file}\n");
 
-	wprintf(L"\nNVRAM: (the commands below are implemented specially for Intel TA, therefore may not work for generic cases\n");
-	wprintf(L" NVInfo {nvIndex in hex}\n");
-	wprintf(L" NVDefine [index] [size] [nvramPassword] {permissions}\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
-	wprintf(L" NVRelease [index]\n");
-	wprintf(L" NVWrite [nvIndex] [nvramPassword] [data in hex]\n");
-	wprintf(L" NVRead [nvIndex]\n");
-	wprintf(L" PCRextend [pcrIndex] [newDigest]\n");
+	wprintf_s(L"\nNVRAM: (the commands below are implemented specially for Intel TA, therefore may not work for generic cases\n");
+	wprintf_s(L" NVInfo {nvIndex in hex}\n");
+	wprintf_s(L" NVDefine [index] [size] [nvramPassword] {permissions}\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
+	wprintf_s(L" NVRelease [index]\n");
+	wprintf_s(L" NVWrite [nvIndex] [nvramPassword] [data in hex]\n");
+	wprintf_s(L" NVRead [nvIndex]\n");
+	wprintf_s(L" PCRextend [pcrIndex] [newDigest]\n");
 
 }
 
@@ -376,7 +376,7 @@ int __cdecl wmain(_In_ int argc,
 		}
         else
         {
-            wprintf(L"Command not found.");
+            wprintf_s(L"Command not found.");
         }
     }
 
