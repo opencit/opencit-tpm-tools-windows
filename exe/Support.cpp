@@ -139,7 +139,7 @@ PcpToolLevelPrefix(
 {
     for(UINT32 n = 0; n < level; n++)
     {
-        wprintf(L"  ");
+        wprintf_s(L"  ");
     }
 }
 
@@ -190,7 +190,7 @@ PcpToolDisplaySIPA(
         PcpToolLevelPrefix(level);
         if(eventStr != NULL)
         {
-            wprintf(L"<%s Size=\"%u\"%s>",
+            wprintf_s(L"<%s Size=\"%u\"%s>",
                     eventStr,
                     cbSipaLen,
                     (cbSipaLen == 0) ? L"/" : L"");
@@ -198,7 +198,7 @@ PcpToolDisplaySIPA(
         }
         else
         {
-            wprintf(L"<SipaEvent Type=\"0x%08x\" Size=\"%u\"%s>",
+            wprintf_s(L"<SipaEvent Type=\"0x%08x\" Size=\"%u\"%s>",
                     sipaType,
                     cbSipaLen,
                     (cbSipaLen == 0) ? L"/" : L"");
@@ -210,7 +210,7 @@ PcpToolDisplaySIPA(
                             SIPAEVENTTYPE_CONTAINER)) == (SIPAEVENTTYPE_AGGREGATION |
                                                           SIPAEVENTTYPE_CONTAINER))
             {
-                wprintf(L"\n");
+                wprintf_s(L"\n");
                 if(FAILED(hr = PcpToolDisplaySIPA(pbSipaData,
                                                   cbSipaLen,
                                                   level + 1)))
@@ -218,7 +218,7 @@ PcpToolDisplaySIPA(
                     goto Cleanup;
                 }
                 PcpToolLevelPrefix(level);
-                wprintf(L"</%s>\n", eventEndStr);
+                wprintf_s(L"</%s>\n", eventEndStr);
             }
             else if((cbSipaLen == sizeof(BYTE)) &
                     ((sipaType == SIPAEVENT_BOOTDEBUGGING) ||
@@ -232,11 +232,11 @@ PcpToolDisplaySIPA(
             {
                 if(pbSipaData[0] == 0)
                 {
-                    wprintf(L"FALSE</%s>\n", eventEndStr);
+                    wprintf_s(L"FALSE</%s>\n", eventEndStr);
                 }
                 else
                 {
-                    wprintf(L"TRUE</%s>\n", eventEndStr);
+                    wprintf_s(L"TRUE</%s>\n", eventEndStr);
                 }
             }
             else if((cbSipaLen == sizeof(UINT64)) &
@@ -249,7 +249,7 @@ PcpToolDisplaySIPA(
                      (sipaType == SIPAEVENT_EVENTCOUNTER) ||
                      (sipaType == SIPAEVENT_COUNTERID)))
             {
-                wprintf(L"%I64u<!-- 0x%016I64x --></%s>\n",
+                wprintf_s(L"%I64u<!-- 0x%016I64x --></%s>\n",
                         *((PUINT64)pbSipaData),
                         *((PUINT64)pbSipaData),
                         eventEndStr);
@@ -259,7 +259,7 @@ PcpToolDisplaySIPA(
                     (sipaType == SIPAEVENT_AUTHORITYPUBLISHER) ||
                     (sipaType == SIPAEVENT_AUTHORITYISSUER))
             {
-                wprintf(L"%s</%s>\n", (PWCHAR)pbSipaData, eventEndStr);
+                wprintf_s(L"%s</%s>\n", (PWCHAR)pbSipaData, eventEndStr);
             }
             else if((cbSipaLen == sizeof(UINT32)) &
                     (sipaType == SIPAEVENT_BITLOCKER_UNLOCK))
@@ -267,45 +267,45 @@ PcpToolDisplaySIPA(
                 UINT32 dwBitLockerUnlock = *((PUINT32)pbSipaData);
                 if(dwBitLockerUnlock == FVEB_UNLOCK_FLAG_NONE)
                 {
-                    wprintf(L"</%s>\n", eventEndStr);
+                    wprintf_s(L"</%s>\n", eventEndStr);
                 }
                 else
                 {
                     if(dwBitLockerUnlock & FVEB_UNLOCK_FLAG_CACHED)
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>CACHED</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>CACHED</BitLockerKeyFlag>");
                     }
                     if(dwBitLockerUnlock & FVEB_UNLOCK_FLAG_MEDIA)
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>MEDIA</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>MEDIA</BitLockerKeyFlag>");
                     }
                     if(dwBitLockerUnlock & FVEB_UNLOCK_FLAG_TPM)
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>TPM</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>TPM</BitLockerKeyFlag>");
                     }
                     if(dwBitLockerUnlock & FVEB_UNLOCK_FLAG_PIN)
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>PIN</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>PIN</BitLockerKeyFlag>");
                     }
                     if(dwBitLockerUnlock & FVEB_UNLOCK_FLAG_EXTERNAL)
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>EXTERNAL</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>EXTERNAL</BitLockerKeyFlag>");
                     }
                     if(dwBitLockerUnlock & FVEB_UNLOCK_FLAG_RECOVERY)
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>RECOVERY</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>RECOVERY</BitLockerKeyFlag>");
                     }
                     if(dwBitLockerUnlock & ~(FVEB_UNLOCK_FLAG_CACHED |
                                              FVEB_UNLOCK_FLAG_MEDIA |
@@ -314,13 +314,13 @@ PcpToolDisplaySIPA(
                                              FVEB_UNLOCK_FLAG_EXTERNAL |
                                              FVEB_UNLOCK_FLAG_RECOVERY))
                     {
-                        wprintf(L"\n");
+                        wprintf_s(L"\n");
                         PcpToolLevelPrefix(level + 1);
-                        wprintf(L"<BitLockerKeyFlag>UNKNOWN</BitLockerKeyFlag>");
+                        wprintf_s(L"<BitLockerKeyFlag>UNKNOWN</BitLockerKeyFlag>");
                     }
-                    wprintf(L"\n");
+                    wprintf_s(L"\n");
                     PcpToolLevelPrefix(level);
-                    wprintf(L"</%s>\n", eventEndStr);
+                    wprintf_s(L"</%s>\n", eventEndStr);
                 }
             }
             else if((cbSipaLen == sizeof(UINT32)) &
@@ -335,7 +335,7 @@ PcpToolDisplaySIPA(
                         break;
                     }
                 }
-                wprintf(L"%s</%s>\n",
+                wprintf_s(L"%s</%s>\n",
                         OsDeviceId[n].Name, eventEndStr);
             }
             else if((cbSipaLen == sizeof(UINT32)) &
@@ -344,11 +344,11 @@ PcpToolDisplaySIPA(
                 UINT32 dwDriverLoadPolicy = *((PUINT32)pbSipaData);
                 if(dwDriverLoadPolicy == 0x00000001)
                 {
-                    wprintf(L"DEFAULT</%s>\n", eventEndStr);
+                    wprintf_s(L"DEFAULT</%s>\n", eventEndStr);
                 }
                 else
                 {
-                    wprintf(L"%u</%s>\n",
+                    wprintf_s(L"%u</%s>\n",
                         dwDriverLoadPolicy, eventEndStr);
                 }
             }
@@ -364,7 +364,7 @@ PcpToolDisplaySIPA(
                         break;
                     }
                 }
-                wprintf(L"%s</%s>\n",
+                wprintf_s(L"%s</%s>\n",
                         TransferControlId[n].Name, eventEndStr);
             }
             else if((cbSipaLen == sizeof(UINT32)) &
@@ -374,25 +374,25 @@ PcpToolDisplaySIPA(
                 switch(dwAlgId)
                 {
                     case CALG_MD4:
-                        wprintf(L"MD4</%s>\n", eventEndStr);
+                        wprintf_s(L"MD4</%s>\n", eventEndStr);
                         break;
                     case CALG_MD5:
-                        wprintf(L"MD5/%s>\n", eventEndStr);
+                        wprintf_s(L"MD5/%s>\n", eventEndStr);
                         break;
                     case CALG_SHA1:
-                        wprintf(L"SHA-1</%s>\n", eventEndStr);
+                        wprintf_s(L"SHA-1</%s>\n", eventEndStr);
                         break;
                     case CALG_SHA_256:
-                        wprintf(L"SHA-256</%s>\n", eventEndStr);
+                        wprintf_s(L"SHA-256</%s>\n", eventEndStr);
                         break;
                     case CALG_SHA_384:
-                        wprintf(L"SHA-384</%s>\n", eventEndStr);
+                        wprintf_s(L"SHA-384</%s>\n", eventEndStr);
                         break;
                     case CALG_SHA_512:
-                        wprintf(L"SHA-512</%s>\n", eventEndStr);
+                        wprintf_s(L"SHA-512</%s>\n", eventEndStr);
                         break;
                     default:
-                        wprintf(L"%u<!-- 0x%08x --></%s>\n",
+                        wprintf_s(L"%u<!-- 0x%08x --></%s>\n",
                                 *((PUINT32)pbSipaData),
                                 *((PUINT32)pbSipaData),
                                 eventEndStr);
@@ -401,31 +401,31 @@ PcpToolDisplaySIPA(
             }
             else
             {
-                wprintf(L"\n");
+                wprintf_s(L"\n");
                 PcpToolLevelPrefix(level + 1);
                 for(UINT32 n = 0; n < cbSipaLen; n++)
                 {
-                    wprintf(L"%02x", pbSipaData[n]);
+                    wprintf_s(L"%02x", pbSipaData[n]);
                 }
-                wprintf(L"\n");
+                wprintf_s(L"\n");
                 PcpToolLevelPrefix(level + 1);
-                wprintf(L"<!-- ");
+                wprintf_s(L"<!-- ");
                 for(UINT32 n = 0; n < cbSipaLen; n++)
                 {
                     if(((pbSipaData[n] >= '0') && (pbSipaData[n] <= '9')) ||
                        ((pbSipaData[n] >= 'A') && (pbSipaData[n] <= 'Z')) ||
                        ((pbSipaData[n] >= 'a') && (pbSipaData[n] <= 'z')))
                     {
-                        wprintf(L"%c", pbSipaData[n]);
+                        wprintf_s(L"%c", pbSipaData[n]);
                     }
                     else
                     {
-                        wprintf(L".");
+                        wprintf_s(L".");
                     }
                 }
-                wprintf(L" -->\n");
+                wprintf_s(L" -->\n");
                 PcpToolLevelPrefix(level);
-                wprintf(L"</%s>\n", eventEndStr);
+                wprintf_s(L"</%s>\n", eventEndStr);
             }
         }
 
@@ -491,9 +491,9 @@ PcpToolDisplayLog(
     }
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<TCGLog>\n");
+    wprintf_s(L"<TCGLog>\n");
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"<WBCL size=\"%u\">\n", cbWBCL);
+    wprintf_s(L"<WBCL size=\"%u\">\n", cbWBCL);
     for(pEntry = (PTCG_PCClientPCREventStruct)pbWBCL;
         ((PBYTE)pEntry - pbWBCL + sizeof(TCG_PCClientPCREventStruct) -
                                 sizeof(BYTE)) < cbWBCL;
@@ -562,7 +562,7 @@ PcpToolDisplayLog(
         PcpToolLevelPrefix(level + 2);
         if(eventStr != NULL)
         {
-            wprintf(L"<%s PCR=\"%02i\" %sDigest=\"%s\" Size=\"%u\"%s>\n",
+            wprintf_s(L"<%s PCR=\"%02i\" %sDigest=\"%s\" Size=\"%u\"%s>\n",
                     eventStr,
                     pEntry->pcrIndex,
                     digestMatchesData?L"Event":L"",
@@ -572,7 +572,7 @@ PcpToolDisplayLog(
         }
         else
         {
-            wprintf(L"<TCGEvent Type=\"%08x\" PCR=\"%02i\" %sDigest=\"%s\" Size=\"%u\"%s>\n",
+            wprintf_s(L"<TCGEvent Type=\"%08x\" PCR=\"%02i\" %sDigest=\"%s\" Size=\"%u\"%s>\n",
                     pEntry->eventType,
                     pEntry->pcrIndex,
                     digestMatchesData?L"Event":L"",
@@ -603,25 +603,25 @@ PcpToolDisplayLog(
                 PcpToolLevelPrefix(level + 3);
                 for(UINT32 n = 0; n < pEntry->eventDataSize; n++)
                 {
-                    wprintf(L"%02x", pEntry->event[n]);
+                    wprintf_s(L"%02x", pEntry->event[n]);
                 }
-                wprintf(L"\n");
+                wprintf_s(L"\n");
                 PcpToolLevelPrefix(level + 3);
-                wprintf(L"<!-- ");
+                wprintf_s(L"<!-- ");
                 for(UINT32 n = 0; n < pEntry->eventDataSize; n++)
                 {
                     if(((pEntry->event[n] >= '0') && (pEntry->event[n] <= '9')) ||
                        ((pEntry->event[n] >= 'A') && (pEntry->event[n] <= 'Z')) ||
                        ((pEntry->event[n] >= 'a') && (pEntry->event[n] <= 'z')))
                     {
-                        wprintf(L"%c", pEntry->event[n]);
+                        wprintf_s(L"%c", pEntry->event[n]);
                     }
                     else
                     {
-                        wprintf(L".");
+                        wprintf_s(L".");
                     }
                 }
-                wprintf(L" -->\n");
+                wprintf_s(L" -->\n");
             }
         }
         PcpToolLevelPrefix(level + 2);
@@ -629,11 +629,11 @@ PcpToolDisplayLog(
         {
             if(eventStr != NULL)
             {
-                wprintf(L"</%s>\n", eventStr);
+                wprintf_s(L"</%s>\n", eventStr);
             }
             else
             {
-                wprintf(L"</TCGEvent>\n");
+                wprintf_s(L"</TCGEvent>\n");
             }
         }
 
@@ -665,26 +665,26 @@ PcpToolDisplayLog(
         }
     }
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"</WBCL>\n");
+    wprintf_s(L"</WBCL>\n");
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"<PCRs>\n");
+    wprintf_s(L"<PCRs>\n");
     for(UINT32 n = 0; n < 24; n++)
     {
         if(usedPcr[n] != FALSE)
         {
             PcpToolLevelPrefix(level + 2);
-            wprintf(L"<PCR Index=\"%02u\">", n);
+            wprintf_s(L"<PCR Index=\"%02u\">", n);
             for(UINT32 m = 0; m < 20; m++)
             {
-                    wprintf(L"%02x", softPCR[n][m]);
+                    wprintf_s(L"%02x", softPCR[n][m]);
             }
-            wprintf(L"</PCR>\n");
+            wprintf_s(L"</PCR>\n");
         }
     }
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"</PCRs>\n");
+    wprintf_s(L"</PCRs>\n");
     PcpToolLevelPrefix(level);
-    wprintf(L"</TCGLog>\n");
+    wprintf_s(L"</TCGLog>\n");
 
 Cleanup:
     return hr;
@@ -730,16 +730,16 @@ PcpToolDisplayKey(
     }
 
     /*PcpToolLevelPrefix(level);
-    wprintf(L"<RSAKey size=\"%u\"", cbKey);
+    wprintf_s(L"<RSAKey size=\"%u\"", cbKey);
     if((lpKeyName != NULL) &&
        (wcsnlen_s(lpKeyName, 2097) != 0))
     {
-        wprintf(L" keyName=\"%s\"", lpKeyName);
+        wprintf_s(L" keyName=\"%s\"", lpKeyName);
     }
-    wprintf(L">\n");
+    wprintf_s(L">\n");
 
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
+    wprintf_s(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
            ((PBYTE)&pKey->Magic)[0],
            ((PBYTE)&pKey->Magic)[1],
            ((PBYTE)&pKey->Magic)[2],
@@ -747,88 +747,88 @@ PcpToolDisplayKey(
            pKey->Magic);
 
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"<BitLength>%u</BitLength>\n", pKey->BitLength);
+    wprintf_s(L"<BitLength>%u</BitLength>\n", pKey->BitLength);
 
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"<PublicExp size=\"%u\">\n", pKey->cbPublicExp);
+    wprintf_s(L"<PublicExp size=\"%u\">\n", pKey->cbPublicExp);
     PcpToolLevelPrefix(level + 2);
     for(UINT32 n = 0; n < pKey->cbPublicExp; n++)
     {
-        wprintf(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) + n]);
+        wprintf_s(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) + n]);
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"</PublicExp>\n");
+    wprintf_s(L"</PublicExp>\n");
 
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"<Modulus size=\"%u\" digest=\"", pKey->cbModulus);
+    wprintf_s(L"<Modulus size=\"%u\" digest=\"", pKey->cbModulus);
     for(UINT32 n = 0; n < sizeof(pubKeyDigest); n++)
     {
-        wprintf(L"%02x", pubKeyDigest[n]);
+        wprintf_s(L"%02x", pubKeyDigest[n]);
     }
-    wprintf(L"\">\n", pKey->cbModulus);
+    wprintf_s(L"\">\n", pKey->cbModulus);
     PcpToolLevelPrefix(level + 2);
     for(UINT32 n = 0; n < pKey->cbModulus; n++)
     {
-        wprintf(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
+        wprintf_s(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
                                pKey->cbPublicExp +
                                n]);
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(level + 1);
-    wprintf(L"</Modulus>\n");
+    wprintf_s(L"</Modulus>\n");
 
     PcpToolLevelPrefix(level + 1);
     if(pKey->cbPrime1 == 0)
     {
-        wprintf(L"<Prime1/>\n");
+        wprintf_s(L"<Prime1/>\n");
     }
     else
     {
-        wprintf(L"<Prime1 size=\"%u\">\n", pKey->cbPrime1);
+        wprintf_s(L"<Prime1 size=\"%u\">\n", pKey->cbPrime1);
         PcpToolLevelPrefix(level + 2);
         for(UINT32 n = 0; n < pKey->cbPrime1; n++)
         {
-            wprintf(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
+            wprintf_s(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
                                    pKey->cbPublicExp +
                                    pKey->cbModulus +
                                    n]);
         }
-        wprintf(L"\n");
+        wprintf_s(L"\n");
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"</Prime1>\n");
+        wprintf_s(L"</Prime1>\n");
     }
     PcpToolLevelPrefix(level + 1);
     if(pKey->cbPrime2 == 0)
     {
-        wprintf(L"<Prime2/>\n");
+        wprintf_s(L"<Prime2/>\n");
     }
     else
     {
-        wprintf(L"<Prime2 size=\"%u\">\n", pKey->cbPrime2);
+        wprintf_s(L"<Prime2 size=\"%u\">\n", pKey->cbPrime2);
         PcpToolLevelPrefix(level + 2);
         for(UINT32 n = 0; n < pKey->cbPrime2; n++)
         {
-            wprintf(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
+            wprintf_s(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
                                    pKey->cbPublicExp +
                                    pKey->cbModulus +
                                    pKey->cbPrime1 +
                                    n]);
         }
-        wprintf(L"\n");
+        wprintf_s(L"\n");
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"</Prime2>\n");
+        wprintf_s(L"</Prime2>\n");
     }
     PcpToolLevelPrefix(level);
-    wprintf(L"</RSAKey>\n");*/
+    wprintf_s(L"</RSAKey>\n");*/
 
 	for (UINT32 n = 0; n < pKey->cbModulus; n++)
 	{
-		wprintf(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
+		wprintf_s(L"%02x", pbKey[sizeof(BCRYPT_RSAKEY_BLOB) +
 			pKey->cbPublicExp +
 			n]);
 	}
-	wprintf(L" ");
+	wprintf_s(L" ");
 
 Cleanup:
     return hr;
@@ -860,7 +860,7 @@ PcpToolDisplayPlatformAttestation(
     }
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
+    wprintf_s(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
            ((PBYTE)&pAttestation->Magic)[0],
            ((PBYTE)&pAttestation->Magic)[1],
            ((PBYTE)&pAttestation->Magic)[2],
@@ -870,69 +870,69 @@ PcpToolDisplayPlatformAttestation(
     PcpToolLevelPrefix(level);
     if(pAttestation->Platform == TPM_VERSION_12)
     {
-        wprintf(L"<Platform>TPM_VERSION_12</Platform>\n");
+        wprintf_s(L"<Platform>TPM_VERSION_12</Platform>\n");
     }
     else if(pAttestation->Platform == TPM_VERSION_20)
     {
-        wprintf(L"<Platform>TPM_VERSION_20</Platform>\n");
+        wprintf_s(L"<Platform>TPM_VERSION_20</Platform>\n");
     }
     else
     {
-        wprintf(L"<Platform>0x%08x</Platform>\n", pAttestation->Platform);
+        wprintf_s(L"<Platform>0x%08x</Platform>\n", pAttestation->Platform);
     }
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<HeaderSize>%u</HeaderSize>\n", pAttestation->HeaderSize);
+    wprintf_s(L"<HeaderSize>%u</HeaderSize>\n", pAttestation->HeaderSize);
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<PcrValues size=\"%u\">\n", pAttestation->cbPcrValues);
+    wprintf_s(L"<PcrValues size=\"%u\">\n", pAttestation->cbPcrValues);
     cursor = pAttestation->HeaderSize;
     for(UINT32 n = 0; n < (pAttestation->cbPcrValues / 20); n++)
     {
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<PCR Index=\"%u\">", n);
+        wprintf_s(L"<PCR Index=\"%u\">", n);
         for(UINT32 m = 0; m < 20; m++)
         {
-            wprintf(L"%02x", pbAttestation[cursor]);
+            wprintf_s(L"%02x", pbAttestation[cursor]);
             cursor++;
         }
-        wprintf(L"</PCR>\n");
+        wprintf_s(L"</PCR>\n");
     }
     PcpToolLevelPrefix(level);
-    wprintf(L"</PcrValues>\n");
+    wprintf_s(L"</PcrValues>\n");
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<Quote size=\"%u\">\n", pAttestation->cbQuote);
+    wprintf_s(L"<Quote size=\"%u\">\n", pAttestation->cbQuote);
     PcpToolLevelPrefix(level + 1);
     for(UINT32 n = 0; n < pAttestation->cbQuote; n++)
     {
-        wprintf(L"%02x", pbAttestation[cursor]);
+        wprintf_s(L"%02x", pbAttestation[cursor]);
         cursor++;
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(level);
-    wprintf(L"</Quote>\n");
+    wprintf_s(L"</Quote>\n");
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<Signature size=\"%u\">\n", pAttestation->cbSignature);
+    wprintf_s(L"<Signature size=\"%u\">\n", pAttestation->cbSignature);
     PcpToolLevelPrefix(level + 1);
     for(UINT32 n = 0; n < pAttestation->cbSignature; n++)
     {
-        wprintf(L"%02x", pbAttestation[cursor]);
+        wprintf_s(L"%02x", pbAttestation[cursor]);
         cursor++;
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(level);
-    wprintf(L"</Signature>\n");
+    wprintf_s(L"</Signature>\n");
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<Log size=\"%u\">\n", pAttestation->cbLog);
+    wprintf_s(L"<Log size=\"%u\">\n", pAttestation->cbLog);
     if(FAILED(hr = PcpToolDisplayLog(&pbAttestation[cursor], pAttestation->cbLog, level + 2)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(level);
-    wprintf(L"</Log>\n");
+    wprintf_s(L"</Log>\n");
 
 Cleanup:
     return hr;
@@ -963,40 +963,40 @@ PcpToolDisplayKeyBlob(
     {
         // TPM 1.2 Key
         /*PcpToolLevelPrefix(level);
-        wprintf(L"<BCRYPT_KEY_BLOB size=\"%u\" sizeHdr=\"%u\">\n", cbKeyBlob, p12Key->cbHeader);
+        wprintf_s(L"<BCRYPT_KEY_BLOB size=\"%u\" sizeHdr=\"%u\">\n", cbKeyBlob, p12Key->cbHeader);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
+        wprintf_s(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
                 ((PBYTE)&p12Key->magic)[0],
                 ((PBYTE)&p12Key->magic)[1],
                 ((PBYTE)&p12Key->magic)[2],
                 ((PBYTE)&p12Key->magic)[3],
                 p12Key->magic);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<pcpType>%s</pcpType>\n", (p12Key->pcpType < ARRAYSIZE(pcpTypeString)) ? pcpTypeString[p12Key->pcpType] : pcpTypeString[0]);
+        wprintf_s(L"<pcpType>%s</pcpType>\n", (p12Key->pcpType < ARRAYSIZE(pcpTypeString)) ? pcpTypeString[p12Key->pcpType] : pcpTypeString[0]);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<flags>%08x</flags>\n", p12Key->flags);
+        wprintf_s(L"<flags>%08x</flags>\n", p12Key->flags);
         PcpToolLevelPrefix(level + 1);
         cursor += p12Key->cbHeader;
-        wprintf(L"<TPM_KEY12 size=\"%u\">\n", p12Key->cbTpmKey);
+        wprintf_s(L"<TPM_KEY12 size=\"%u\">\n", p12Key->cbTpmKey);
         PcpToolLevelPrefix(level + 2);
 		for (UINT32 n = 0; n < p12Key->cbTpmKey; n++)
         {
-            wprintf(L"%02x", pbKeyBlob[cursor]);
+            wprintf_s(L"%02x", pbKeyBlob[cursor]);
             cursor++;
         }
-        wprintf(L"\n");
+        wprintf_s(L"\n");
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"</TPM_KEY12>\n");
+        wprintf_s(L"</TPM_KEY12>\n");
         PcpToolLevelPrefix(level);
-        wprintf(L"</BCRYPT_KEY_BLOB>\n");*/
+        wprintf_s(L"</BCRYPT_KEY_BLOB>\n");*/
 
 		cursor += p12Key->cbHeader;
 		for (UINT32 n = 0; n < p12Key->cbTpmKey; n++)
 		{
-			wprintf(L"%02x", pbKeyBlob[cursor]);
+			wprintf_s(L"%02x", pbKeyBlob[cursor]);
 			cursor++;
 		}
-		wprintf(L"\n");
+		wprintf_s(L"\n");
     }
     else if((pW8Key != NULL) &&
             (cbKeyBlob >= sizeof(PCP_KEY_BLOB_WIN8)) &&
@@ -1017,20 +1017,20 @@ PcpToolDisplayKeyBlob(
 		/*
         // TPM 2.0 Key
         PcpToolLevelPrefix(level);
-        wprintf(L"<PCP_KEY_BLOB_WIN8 size=\"%u\" sizeHdr=\"%u\">\n", cbKeyBlob, pW8Key->cbHeader);
+        wprintf_s(L"<PCP_KEY_BLOB_WIN8 size=\"%u\" sizeHdr=\"%u\">\n", cbKeyBlob, pW8Key->cbHeader);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
+        wprintf_s(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
                 ((PBYTE)&pW8Key->magic)[0],
                 ((PBYTE)&pW8Key->magic)[1],
                 ((PBYTE)&pW8Key->magic)[2],
                 ((PBYTE)&pW8Key->magic)[3],
                 pW8Key->magic);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<pcpType>%s</pcpType>\n", (p12Key->pcpType < ARRAYSIZE(pcpTypeString)) ? pcpTypeString[p12Key->pcpType] : pcpTypeString[0]);
+        wprintf_s(L"<pcpType>%s</pcpType>\n", (p12Key->pcpType < ARRAYSIZE(pcpTypeString)) ? pcpTypeString[p12Key->pcpType] : pcpTypeString[0]);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<flags>%08x</flags>\n", pW8Key->flags);
+        wprintf_s(L"<flags>%08x</flags>\n", pW8Key->flags);
         PcpToolLevelPrefix(level + 1);
-        wprintf(L"<TPM2B_PUBLIC_KEY size=\"%u\">\n", pW8Key->cbPublic);
+        wprintf_s(L"<TPM2B_PUBLIC_KEY size=\"%u\">\n", pW8Key->cbPublic);
         cursor += pW8Key->cbHeader;
 
         if(pW8Key->cbPublic != 0)
@@ -1038,189 +1038,189 @@ PcpToolDisplayKeyBlob(
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbPublic; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPM2B_PUBLIC_KEY>\n");
+            wprintf_s(L"</TPM2B_PUBLIC_KEY>\n");
             cursor += pW8Key->cbPublic;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PUBLIC_KEY/>\n");
+            wprintf_s(L"<TPM2B_PUBLIC_KEY/>\n");
         }
 
         if(pW8Key->cbPrivate != 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PRIVATE_KEY size=\"%u\">\n", pW8Key->cbPrivate);
+            wprintf_s(L"<TPM2B_PRIVATE_KEY size=\"%u\">\n", pW8Key->cbPrivate);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbPrivate; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPM2B_PRIVATE_KEY>\n");
+            wprintf_s(L"</TPM2B_PRIVATE_KEY>\n");
             cursor += pW8Key->cbPublic;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PRIVATE_KEY/>\n");
+            wprintf_s(L"<TPM2B_PRIVATE_KEY/>\n");
         }
 
         if(pW8Key->cbMigrationPublic != 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PUBLIC_MIGRATION size=\"%u\">\n", pW8Key->cbMigrationPublic);
+            wprintf_s(L"<TPM2B_PUBLIC_MIGRATION size=\"%u\">\n", pW8Key->cbMigrationPublic);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbMigrationPublic; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPM2B_PUBLIC_MIGRATION>\n");
+            wprintf_s(L"</TPM2B_PUBLIC_MIGRATION>\n");
             cursor += pW8Key->cbMigrationPublic;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PUBLIC_MIGRATION/>\n");
+            wprintf_s(L"<TPM2B_PUBLIC_MIGRATION/>\n");
         }
 
         if(pW8Key->cbMigrationPrivate > 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PRIVATE_MIGRATION size=\"%u\">\n", pW8Key->cbMigrationPrivate);
+            wprintf_s(L"<TPM2B_PRIVATE_MIGRATION size=\"%u\">\n", pW8Key->cbMigrationPrivate);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbMigrationPrivate; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPM2B_PRIVATE_MIGRATION>\n");
+            wprintf_s(L"</TPM2B_PRIVATE_MIGRATION>\n");
             cursor += pW8Key->cbMigrationPrivate;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PRIVATE_MIGRATION/>\n");
+            wprintf_s(L"<TPM2B_PRIVATE_MIGRATION/>\n");
         }
 
         if(pW8Key->cbPolicyDigestList > 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPML_DIGEST_POLICY size=\"%u\">\n", pW8Key->cbPolicyDigestList);
+            wprintf_s(L"<TPML_DIGEST_POLICY size=\"%u\">\n", pW8Key->cbPolicyDigestList);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbPolicyDigestList; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPML_DIGEST_POLICY>\n");
+            wprintf_s(L"</TPML_DIGEST_POLICY>\n");
             cursor += pW8Key->cbPolicyDigestList;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPML_DIGEST_POLICY/>\n");
+            wprintf_s(L"<TPML_DIGEST_POLICY/>\n");
         }
 
         if(pW8Key->cbPCRBinding > 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<PcrBinding size=\"%u\">\n", pW8Key->cbPCRBinding);
+            wprintf_s(L"<PcrBinding size=\"%u\">\n", pW8Key->cbPCRBinding);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbPCRBinding; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</PcrBinding>\n");
+            wprintf_s(L"</PcrBinding>\n");
             cursor += pW8Key->cbPCRBinding;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<PcrBinding/>\n");
+            wprintf_s(L"<PcrBinding/>\n");
         }
 
         if(pW8Key->cbPCRDigest > 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<PcrDigest size=\"%u\">\n", pW8Key->cbPCRDigest);
+            wprintf_s(L"<PcrDigest size=\"%u\">\n", pW8Key->cbPCRDigest);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbPCRDigest; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</PcrDigest>\n");
+            wprintf_s(L"</PcrDigest>\n");
             cursor += pW8Key->cbPCRDigest;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<PcrDigest/>\n");
+            wprintf_s(L"<PcrDigest/>\n");
         }
 
         if(pW8Key->cbEncryptedSecret > 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_DATA_IMPORT_SECRET size=\"%u\">\n", pW8Key->cbEncryptedSecret);
+            wprintf_s(L"<TPM2B_DATA_IMPORT_SECRET size=\"%u\">\n", pW8Key->cbEncryptedSecret);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbEncryptedSecret; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPM2B_DATA_IMPORT_SECRET>\n");
+            wprintf_s(L"</TPM2B_DATA_IMPORT_SECRET>\n");
             cursor += pW8Key->cbEncryptedSecret;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_DATA_IMPORT_SECRET/>\n");
+            wprintf_s(L"<TPM2B_DATA_IMPORT_SECRET/>\n");
         }
 
         if(pW8Key->cbTpm12HostageBlob > 0)
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PRIVATE_IMPORT size=\"%u\">\n", pW8Key->cbTpm12HostageBlob);
+            wprintf_s(L"<TPM2B_PRIVATE_IMPORT size=\"%u\">\n", pW8Key->cbTpm12HostageBlob);
             PcpToolLevelPrefix(level + 2);
             for(UINT32 n = 0; n < pW8Key->cbTpm12HostageBlob; n++)
             {
-                wprintf(L"%02x", pbKeyBlob[cursor + n]);
+                wprintf_s(L"%02x", pbKeyBlob[cursor + n]);
             }
-            wprintf(L"\n");
+            wprintf_s(L"\n");
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"</TPM2B_PRIVATE_IMPORT>\n");
+            wprintf_s(L"</TPM2B_PRIVATE_IMPORT>\n");
             cursor += pW8Key->cbTpm12HostageBlob;
         }
         else
         {
             PcpToolLevelPrefix(level + 1);
-            wprintf(L"<TPM2B_PRIVATE_IMPORT/>\n");
+            wprintf_s(L"<TPM2B_PRIVATE_IMPORT/>\n");
         }
 
         PcpToolLevelPrefix(level);
-        wprintf(L"</PCP_KEY_BLOB_WIN8>\n");
+        wprintf_s(L"</PCP_KEY_BLOB_WIN8>\n");
 		*/
 		cursor =0;
 		for (UINT32 n = 0; n < cbKeyBlob; n++)
 		{
-			wprintf(L"%02x", pbKeyBlob[cursor]);
+			wprintf_s(L"%02x", pbKeyBlob[cursor]);
 			cursor++;
 		}
-		wprintf(L"\n");
+		wprintf_s(L"\n");
     }
     else
     {
@@ -1257,7 +1257,7 @@ PcpToolDisplayKeyAttestation(
     }
 
     /*PcpToolLevelPrefix(level);
-    wprintf(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
+    wprintf_s(L"<Magic>%c%c%c%c<!-- 0x%08x --></Magic>\n",
            ((PBYTE)&pAttestation->Magic)[0],
            ((PBYTE)&pAttestation->Magic)[1],
            ((PBYTE)&pAttestation->Magic)[2],
@@ -1267,67 +1267,67 @@ PcpToolDisplayKeyAttestation(
     PcpToolLevelPrefix(level);
     if(pAttestation->Platform == TPM_VERSION_12)
     {
-        wprintf(L"<Platform>TPM_VERSION_12</Platform>\n");
+        wprintf_s(L"<Platform>TPM_VERSION_12</Platform>\n");
     }
     else if(pAttestation->Platform == TPM_VERSION_20)
     {
-        wprintf(L"<Platform>TPM_VERSION_20</Platform>\n");
+        wprintf_s(L"<Platform>TPM_VERSION_20</Platform>\n");
     }
     else
     {
-        wprintf(L"<Platform>0x%08x</Platform>\n", pAttestation->Platform);
+        wprintf_s(L"<Platform>0x%08x</Platform>\n", pAttestation->Platform);
     }
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<HeaderSize>%u</HeaderSize>\n", pAttestation->HeaderSize);
+    wprintf_s(L"<HeaderSize>%u</HeaderSize>\n", pAttestation->HeaderSize);
     cursor += pAttestation->HeaderSize;
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<Certify size=\"%u\">\n", pAttestation->cbKeyAttest);
+    wprintf_s(L"<Certify size=\"%u\">\n", pAttestation->cbKeyAttest);
     PcpToolLevelPrefix(level + 1);
     for(UINT32 n = 0; n < pAttestation->cbKeyAttest; n++)
     {
-        wprintf(L"%02x", pbAttestation[cursor]);
+        wprintf_s(L"%02x", pbAttestation[cursor]);
         cursor++;
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(level);
-    wprintf(L"</Certify>\n");
+    wprintf_s(L"</Certify>\n");
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<Signature size=\"%u\">\n", pAttestation->cbSignature);
+    wprintf_s(L"<Signature size=\"%u\">\n", pAttestation->cbSignature);
     PcpToolLevelPrefix(level + 1);
     for(UINT32 n = 0; n < pAttestation->cbSignature; n++)
     {
-        wprintf(L"%02x", pbAttestation[cursor]);
+        wprintf_s(L"%02x", pbAttestation[cursor]);
         cursor++;
     }
-    wprintf(L"\n");
+    wprintf_s(L"\n");
     PcpToolLevelPrefix(level);
-    wprintf(L"</Signature>\n");
+    wprintf_s(L"</Signature>\n");
 
     PcpToolLevelPrefix(level);
-    wprintf(L"<KeyBlob size=\"%u\">\n", pAttestation->cbKeyBlob);
+    wprintf_s(L"<KeyBlob size=\"%u\">\n", pAttestation->cbKeyBlob);
     if(FAILED(hr = PcpToolDisplayKeyBlob(&pbAttestation[cursor], pAttestation->cbKeyBlob, level + 1)))
     {
         goto Cleanup;
     }
     PcpToolLevelPrefix(level);
-    wprintf(L"</KeyBlob>\n");*/
+    wprintf_s(L"</KeyBlob>\n");*/
 
 	cursor += pAttestation->HeaderSize;
 	for (UINT32 n = 0; n < pAttestation->cbKeyAttest; n++)
 	{
-		wprintf(L"%02x", pbAttestation[cursor]);
+		wprintf_s(L"%02x", pbAttestation[cursor]);
 		cursor++;
 	}
-	wprintf(L" ");
+	wprintf_s(L" ");
 	for (UINT32 n = 0; n < pAttestation->cbSignature; n++)
 	{
-		wprintf(L"%02x", pbAttestation[cursor]);
+		wprintf_s(L"%02x", pbAttestation[cursor]);
 		cursor++;
 	}
-	wprintf(L" ");
+	wprintf_s(L" ");
 	if (FAILED(hr = PcpToolDisplayKeyBlob(&pbAttestation[cursor], pAttestation->cbKeyBlob, level + 1)))
 	{
 		goto Cleanup;
@@ -1624,11 +1624,11 @@ PcpToolCallResult(
 
         if (result != 0)
         {
-            wprintf(L"ERROR - %s: (0x%08lx) %s\n", func, hr, Buffer);
+            wprintf_s(L"ERROR - %s: (0x%08lx) %s\n", func, hr, Buffer);
         }
         else
         {
-            wprintf(L"ERROR - %s: (0x%08lx)\n", func, hr);
+            wprintf_s(L"ERROR - %s: (0x%08lx)\n", func, hr);
         }
         LocalFree(Buffer);
     }

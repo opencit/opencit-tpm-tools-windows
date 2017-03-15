@@ -758,12 +758,12 @@ GenerateActivation12(
     }
 
 	/* debug HD */
-	wprintf(L"Activation text with size %d: ", cbActivation);
+	wprintf_s(L"Activation text with size %d: ", cbActivation);
 	for (UINT32 n = 0; n < cbActivation; n++)
 	{
-		wprintf(L"%02x", pbActivation[n]);
+		wprintf_s(L"%02x", pbActivation[n]);
 	}
-	wprintf(L"\n");
+	wprintf_s(L"\n");
 
     // Encrypt the token with the EKpub
     if(FAILED(hr = HRESULT_FROM_NT(BCryptEncrypt(
@@ -3680,7 +3680,7 @@ StartOSAPSession(
 	if (returnCode != 0)
 	{
 		hr = E_FAIL;
-		wprintf(L"OSAP invalid return with code: 0x%x\n", returnCode);
+		wprintf_s(L"OSAP invalid return with code: 0x%x\n", returnCode);
 		goto Cleanup;
 	}
 	if (FAILED(hr = ReadBigEndian(rsp, cbRsp, &cursor, pSessionHandle))) // Session Handle
@@ -3902,7 +3902,7 @@ UINT32 permissions
 		rsp,
 		&cbRsp)))
 	{
-		wprintf(L" error hr: %lx\n", hr);
+		wprintf_s(L" error hr: %lx\n", hr);
 		goto Cleanup;
 	}
 
@@ -3927,7 +3927,7 @@ UINT32 permissions
 	if (returnCode != 0)
 	{
 		hr = E_FAIL;
-		wprintf(L"TPM return code: %x\n", returnCode);
+		wprintf_s(L"TPM return code: %x\n", returnCode);
 		goto Cleanup;
 	}
 
@@ -4282,7 +4282,7 @@ changeAuthOwner12(
 		rsp,
 		&cbRsp)))
 	{
-		wprintf(L" error hr: %lx\n", hr);
+		wprintf_s(L" error hr: %lx\n", hr);
 		goto Cleanup;
 	}
 
@@ -4307,7 +4307,7 @@ changeAuthOwner12(
 	if (returnCode != 0)
 	{
 		hr = E_FAIL;
-		wprintf(L"TPM return code: %x\n", returnCode);
+		wprintf_s(L"TPM return code: %x\n", returnCode);
 		goto Cleanup;
 	}
 
@@ -4481,7 +4481,7 @@ nvReadVaule12(
 	}
 	if (returnCode != 0)
 	{
-		wprintf(L"TPM command failed with return code: %08x\n", returnCode);
+		wprintf_s(L"TPM command failed with return code: %08x\n", returnCode);
 		hr = E_FAIL;
 		goto Cleanup;
 	}
@@ -4674,7 +4674,7 @@ nvWriteVauleAuth12(
 	}
 	if (returnCode != 0)
 	{
-		wprintf(L"TPM command failed with return code: %08x\n", returnCode);
+		wprintf_s(L"TPM command failed with return code: %08x\n", returnCode);
 		hr = E_FAIL;
 		goto Cleanup;
 	}
@@ -4768,7 +4768,7 @@ pcrExtend12(
 	}
 	if (returnCode != 0)
 	{
-		wprintf(L"TPM command failed with return code: %08x\n", returnCode);
+		wprintf_s(L"TPM command failed with return code: %08x\n", returnCode);
 		hr = E_FAIL;
 		goto Cleanup;
 	}
