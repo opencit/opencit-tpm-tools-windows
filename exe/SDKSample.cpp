@@ -8304,6 +8304,7 @@ signature to a file if provided.
 --*/
 {
 	HRESULT hr = S_OK;
+	UINT32 tpmVersion = 0;
 	NCRYPT_PROV_HANDLE hProv = NULL;
 	NCRYPT_KEY_HANDLE hKey = NULL;
 	PCWSTR keyName = NULL;
@@ -8314,10 +8315,7 @@ signature to a file if provided.
 	UINT32 cbData = 0;
 	PBYTE pbSignature = NULL;
 	UINT32 cbSignature = 0;
-
 	BCRYPT_PKCS1_PADDING_INFO paddingInfo;
-	// Algorithm to be used for Signing
-	paddingInfo.pszAlgId = BCRYPT_SHA1_ALGORITHM;
 
 	// Paranoid check
 	if (argc < 2)
@@ -8416,6 +8414,26 @@ signature to a file if provided.
 		{
 			goto Cleanup;
 		}
+	}
+
+	// Get the TPM version from the platform
+	if (FAILED(hr = TpmAttiGetTpmVersion(&tpmVersion)))
+	{
+		goto Cleanup;
+	}
+	// Algorithm to be used for Signing
+	if (tpmVersion == TPM_VERSION_12)
+	{
+		paddingInfo.pszAlgId = BCRYPT_SHA1_ALGORITHM;
+	}
+	else if (tpmVersion == TPM_VERSION_20)
+	{
+		paddingInfo.pszAlgId = BCRYPT_SHA256_ALGORITHM;
+	}
+	else
+	{
+		hr = E_FAIL;
+		goto Cleanup;
 	}
 
 	// Generate signature for hashed data
