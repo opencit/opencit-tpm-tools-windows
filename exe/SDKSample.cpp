@@ -274,19 +274,20 @@ IssueCertificate(
     }
 
     // Convert the subject name from WCHAR to ASCII
-    if(!WideCharToMultiByte(CP_UTF8,
-                            WC_ERR_INVALID_CHARS,
-                            szSubject,
-							(int)wcsnlen_s(szSubject, MAX_PATH),
-                            (LPSTR)subjectCommonName,
-                            MAX_PATH,
-                            NULL,
-                            NULL))
+    int bytes_written = WideCharToMultiByte(CP_UTF8,
+		WC_ERR_INVALID_CHARS,
+		szSubject,
+		(int)wcsnlen_s(szSubject, MAX_PATH),
+		(LPSTR)subjectCommonName,
+		MAX_PATH,
+		NULL,
+		NULL);
+    if(bytes_written == 0)
     {
         hr = HRESULT_FROM_WIN32(GetLastError());
         goto Cleanup;
     }
-    rgSubjectCommonNameAttr.Value.cbData = (DWORD)strlen((LPSTR)subjectCommonName) + 1;
+    rgSubjectCommonNameAttr.Value.cbData = (DWORD)bytes_written + 1;
 
     // Put the certificate together
     certInfo.dwVersion = CERT_V3;
@@ -8231,13 +8232,13 @@ _In_reads_(argc) WCHAR* argv[]
 	{
 		goto Cleanup;
 	}
-	if ((keyAuthValue != NULL) && (wcslen(keyAuthValue) != 0))
+	if ((keyAuthValue != NULL) && (wcsnlen_s(keyAuthValue, ARG_MAX) != 0))
 	{
 		if (FAILED(hr = HRESULT_FROM_WIN32(NCryptSetProperty(
 			hKey,
 			NCRYPT_PIN_PROPERTY,
 			(PBYTE)keyAuthValue,
-			(DWORD)((wcslen(keyAuthValue) + 1) * sizeof(WCHAR)),
+			(DWORD)((wcsnlen_s(keyAuthValue, ARG_MAX) + 1) * sizeof(WCHAR)),
 			0))))
 		{
 			goto Cleanup;
