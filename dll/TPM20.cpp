@@ -726,10 +726,10 @@ GenerateActivation20(
     BYTE hmacKey[SHA256_DIGEST_SIZE] = {0};
     UINT32 cbHmacKey = 0;
 
-    PSTR szLabel = "IDENTITY";
+    static const CHAR szLabel[] = "IDENTITY";
     BCRYPT_OAEP_PADDING_INFO PaddingInfo = {BCRYPT_SHA256_ALGORITHM,
                                             (PUCHAR)szLabel,
-                                            (ULONG)strlen(szLabel) + 1};
+                                            sizeof(szLabel)};
     UINT32 cbActivation = 0;
 
     // Please note: This function requires a windows defined EKNameAlg of SHA256
@@ -2777,10 +2777,10 @@ WrapPlatformKey20(
     BYTE aesIv[16] = {0};
     BYTE hmacKey[SHA256_DIGEST_SIZE] = {0};
     BYTE keyName[SHA256_DIGEST_SIZE + sizeof(UINT16)] = {0};
-    PSTR szLabel = "DUPLICATE";
+    static const CHAR szLabel[] = "DUPLICATE";
     BCRYPT_OAEP_PADDING_INFO paddingInfo = {BCRYPT_SHA256_ALGORITHM,
                                             (PUCHAR)szLabel,
-                                            (ULONG)strlen(szLabel) + 1};
+                                            sizeof(szLabel)};
     BCRYPT_ALG_HANDLE hDerivation = NULL;
     BCRYPT_KEY_HANDLE hDerivationKey = NULL;
     static const CHAR label[] = "ftpmimportkey"; // what is the purpose of the derived key?
