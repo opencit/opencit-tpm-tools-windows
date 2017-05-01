@@ -10572,13 +10572,13 @@ HRESULT PcpToolNVRead(
 {
 	HRESULT hr = 0;
 	UINT32 nvIndex = 0;
-	BYTE pbData[20] = { 0 };
-	UINT32 cbData = 20; // only read 20 bytes from the nvIndex area
+	BYTE pbData[64] = { 0 }; //allocate 64 bytes buffer to read the content from nvram
+	UINT32 cbData = 20; // initialize to 20 bytes, but will read from input
 	UINT32 rspDLen = 0;
 
 
-	if (argc < 3) {
-		wprintf_s(L"Usage: Pcptool nvread [nvIndex]\n");
+	if (argc < 4) {
+		wprintf_s(L"Usage: Pcptool nvread [nvIndex] [size in hex]\n");
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
@@ -10587,15 +10587,19 @@ HRESULT PcpToolNVRead(
 		hr = E_INVALIDARG;
 		goto Cleanup;
 	}
+	if (swscanf_s(argv[3], L"%x", &cbData) == 0) //Parameter: Size. the expected size is in hex, not decimal
+	{
+		goto Cleanup;
+	}
 
-	/* call nvreadvalue to read 20 bytes */
+	/* call nvreadvalue to read cbData of bytes */
 	hr = TpmNVReadValue(nvIndex, pbData, cbData, &rspDLen);
 	if (hr != S_OK) {
 		wprintf_s(L"tpm nv readvalue failed with return value %lu\n", hr);
 	}
 	else {
 		//wprintf_s(L"tpm nv readvalue succeeds reading %d bytes!\n", rspDLen);
-		for (UINT32 i = 0; i < cbData; i++) {
+		for (UINT32 i = 0; i < rspDLen; i++) {
 			wprintf_s(L"%02x", pbData[i]);
 		}
 		//wprintf_s(L"\n");
@@ -10683,7 +10687,7 @@ HRESULT PcpToolNVDefine(
 	{
 		goto Cleanup;
 	}
-	if (swscanf_s(argv[3], L"%x", &nvIndexSize) == 0) //Parameter: Index Size
+	if (swscanf_s(argv[3], L"%x", &nvIndexSize) == 0) //Parameter: Index Size. the passed in size should be in hex
 	{
 		goto Cleanup;
 	}

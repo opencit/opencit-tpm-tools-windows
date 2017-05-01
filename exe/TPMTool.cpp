@@ -106,10 +106,10 @@ PcpToolGetHelp(
 
 	wprintf_s(L"\nNVRAM: (the commands below are implemented specially for Intel TA, therefore may not work for generic cases\n");
 	wprintf_s(L" NVInfo {nvIndex in hex}\n");
-	wprintf_s(L" NVDefine [index] [size] [nvramPassword] {permissions}\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
+	wprintf_s(L" NVDefine [index] [size in hexicimal] [nvramPassword] {permissions}\n"); //"tpm_nvdefine -i " + index + " -s 0x14 -x -t -aNvramPassword -otpmOwnerPass --permissions=AUTHWRITE"
 	wprintf_s(L" NVRelease [index]\n");
 	wprintf_s(L" NVWrite [nvIndex] [nvramPassword] [data in hex]\n");
-	wprintf_s(L" NVRead [nvIndex]\n");
+	wprintf_s(L" NVRead [nvIndex] [size in hexicimal]\n");
 	wprintf_s(L" PCRextend [pcrIndex] [newDigest]\n");
 
 }
