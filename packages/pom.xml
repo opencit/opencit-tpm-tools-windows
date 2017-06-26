@@ -1,108 +1,109 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    
     <groupId>com.intel.mtwilson.windows.packages</groupId>
     <artifactId>tpmtools-windows</artifactId>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.2.1-SNAPSHOT</version>
+    
     <packaging>pom</packaging>
     <name>packages-tpmtools-windows</name>
-
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <makeself.directory>${project.build.directory}/${project.artifactId}-${project.version}</makeself.directory>
     </properties>
     
     <profiles>
-      <profile>
-          <activation>
-              <os>
-                <family>windows</family>
-              </os>
-          </activation>
-          <build>
-              <plugins>
-                  <!-- create self-extracting installer plugin -->
-                <plugin>
-                      <artifactId>maven-resources-plugin</artifactId>
-                      <version>2.5</version>
-                      <executions>
-                          <execution>
-                              <id>copy-resources</id>
-                              <phase>generate-resources</phase>
-                              <goals>
-                                  <goal>copy-resources</goal>
-                              </goals>
-                              <configuration>
-                                  <outputDirectory>${makeself.directory}</outputDirectory>
-                                  <resources>
-                                      <resource>
-                                          <directory>../x64/Release</directory>
-                                          <includes>
-                                              <include>TPMTool.exe</include>
-                                              <include>TpmAtt.dll</include>
-                                          </includes>
-                                          <filtering>false</filtering>
-                                      </resource>
-                                      <resource>
-                                          <directory>../tpm_commands</directory>
-                                          <includes>
-                                              <include>tpm_signdata.exe</include>
-                                              <include>tpm_unbindaeskey.exe</include>
-                                          </includes>
-                                          <filtering>false</filtering>
-                                      </resource>                                      
-                                  </resources>
-                              </configuration>            
-                          </execution>
-                      </executions>
-                  </plugin>
-                  <plugin>
-                      <groupId>org.codehaus.mojo</groupId>
-                      <artifactId>exec-maven-plugin</artifactId>
-                      <version>1.2.1</version>
-                      <executions>
-                          <execution>
-                              <id>compile-windows-vmattestation-tools</id>
-                              <phase>compile</phase>
-                              <goals>
-                                  <goal>exec</goal>
-                              </goals>
-                              <configuration>
+        <profile>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- create self-extracting installer plugin -->
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>2.5</version>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${makeself.directory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>../x64/Release</directory>
+                                            <includes>
+                                                <include>TPMTool.exe</include>
+                                                <include>TpmAtt.dll</include>
+                                            </includes>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                        <resource>
+                                            <directory>../tpm_commands</directory>
+                                            <includes>
+                                                <include>tpm_signdata.exe</include>
+                                                <include>tpm_unbindaeskey.exe</include>
+                                            </includes>
+                                            <filtering>false</filtering>
+                                        </resource>                                      
+                                    </resources>
+                                </configuration>            
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>compile-windows-vmattestation-tools</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>makezip-auto.sh</argument>
                                         <argument>${makeself.directory}</argument>
                                         <argument>${project.version}</argument>
                                     </arguments>
-                              </configuration>
-                          </execution>
-                      </executions>
-                  </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>1.5</version>
-                    <executions>
-                        <execution>
-                            <id>attach-artifacts</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>attach-artifact</goal>
-                            </goals>
-                            <configuration>
-                                <artifacts>
-                                    <artifact>
-                                        <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
-                                        <type>zip</type>
-                                    </artifact>
-                                </artifacts>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>                  
-              </plugins>
-          </build>
-      </profile>
-  </profiles>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>attach-artifacts</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>attach-artifact</goal>
+                                </goals>
+                                <configuration>
+                                    <artifacts>
+                                        <artifact>
+                                            <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
+                                            <type>zip</type>
+                                        </artifact>
+                                    </artifacts>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>                  
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
