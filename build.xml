@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="tpmtools-windows" default="all" basedir=".">
+	<description>
+	Run "ant ready" to ensure you have all pre-requisites to build
+	Run "ant" or "ant build" to build the entire project
+	Run "ant ready build packages" to clean build and generate packages
+	Run "ant build packages" to rebuild only and generate packages
+	Run "ant packages" to generate packages (requires prior build)
+	</description>
+	
+	<target name="info">
+		<echoproperties/>
+	</target>
+	
+	<target name="init">
+		<condition property="cmd.maven" value="mvn.cmd">
+			<os family="windows"/>
+		</condition>
+		<condition property="cmd.maven" value="mvn">
+			<os family="unix"/>
+		</condition>
+                <condition property="isWindows" value="true">
+                        <os family="windows" />
+                </condition>             
+                <condition property="isUnix" value="true">
+                        <os family="unix" />
+                </condition>
+	</target>
+	
+	<target name="ready" depends="init">
+		<!-- the root pom -->
+		<!-- the root pom -->
+	</target>
+	
+	<target name="clean" depends="init">
+		<!-- the root pom and all projects -->
+		<exec executable="${cmd.maven}" resultproperty="mavenExitClean">
+			<arg value="clean"/>
+		</exec>
+		<fail message="Cannot clean build files" status="${mavenExitClean}">
+			<condition><not><equals arg1="${mavenExitClean}" arg2="0"/></not></condition>
+		</fail>
+		<!-- the packages -->
+		<exec executable="${cmd.maven}" dir="packages" resultproperty="mavenExitCleanPackages">
+			<arg value="clean"/>
+		</exec>
+		<fail message="Cannot clean project packages" status="${mavenExitCleanPackages}">
+			<condition><not><equals arg1="${mavenExitCleanPackages}" arg2="0"/></not></condition>
+		</fail>
+		
+		<delete dir="x64"/>
+		<delete file="tpm_commands/tpm_signdata.exe"/>
+		<delete file="tpm_commands/tpm_signdata.obj"/>                
+                <delete file="tpm_commands/tpm_unbindaeskey.exe"/>
+		<delete file="tpm_commands/tpm_unbindaeskey.obj"/>                
+	</target>
+	
+	<target name="build" depends="init">
+		<!-- the root pom and all projects except packages -->	
+		<exec executable="${cmd.maven}"  resultproperty="mavenExitInstall">
+			<arg value="-DskipTests=true"/>
+			<arg value="install"/>
+		</exec>
+		<fail message="Cannot build project" status="${mavenExitInstall}">
+			<condition><not><equals arg1="${mavenExitInstall}" arg2="0"/></not></condition>
+		</fail>
+	</target>
+
+	<target name="packages" depends="init">
+		<!-- the packages -->
+		<exec executable="${cmd.maven}" dir="packages" resultproperty="mavenExitInstallPackages">
+			<arg value="-DskipTests=true"/>
+			<arg value="install"/>
+		</exec>
+		<fail message="Cannot build project packages" status="${mavenExitInstallPackages}">
+			<condition><not><equals arg1="${mavenExitInstallPackages}" arg2="0"/></not></condition>
+		</fail>
+	</target>
+	<target name="all" depends="ready,clean,build,packages"></target>
+    
+     <target name="klocwork" depends="init,ready">
+        <exec executable="/bin/bash">
+		      <arg value="klocwork.sh"/>
+		</exec>
+    </target>
+    
+    <target name="build-with-scans">
+        <parallel>
+            <exec executable="ant">
+	           <arg value="all"/>
+            </exec>
+	        <exec executable="ant">
+        	    <arg value="klocwork"/>
+	        </exec>
+	    </parallel>
+     </target>
+
+</project>

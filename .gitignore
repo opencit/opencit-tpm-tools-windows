@@ -1,0 +1,14 @@
+.vs/
+Tpmtool.VC.VC.opendb
+Tpmtool.VC.db
+Tpmtool.sln.DotSettings.user
+dll/dll.vcxproj.user
+dll/x64/
+dll/Debug/
+exe/Debug/
+exe/x64/
+ipch/
+x64/
+Debug/
+External/
+/packages/target/

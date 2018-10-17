@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>nvread 0x40000010</LocalDebuggerCommandArguments>
+    <RemoteDebuggerCommand>C:\TPMTool\TPMTool.exe</RemoteDebuggerCommand>
+    <RemoteDebuggerCommandArguments>nvread 0x1c10110</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerWorkingDirectory>C:\TPMTool\</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>10.105.151.171</RemoteDebuggerServerName>
+    <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
+    <DeploymentDirectory>C:\TPMTool\</DeploymentDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>nvdefine  0x40000010 0x14 hello aaa</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
+    <LocalDebuggerAttach>false</LocalDebuggerAttach>
+    <RemoteDebuggerCommand>C:\TPMTool\TPMTool.exe</RemoteDebuggerCommand>
+    <RemoteDebuggerCommandArguments>nvdefine 0x40000010 0x14 hello aaa</RemoteDebuggerCommandArguments>
+    <RemoteDebuggerWorkingDirectory>C:\TPMTool\</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>10.105.151.171</RemoteDebuggerServerName>
+    <RemoteDebuggerConnection>RemoteWithoutAuthentication</RemoteDebuggerConnection>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <RemoteDebuggerCommand>C:\TPMTool\TPMTool.exe</RemoteDebuggerCommand>
+    <RemoteDebuggerCommandArguments>
+    </RemoteDebuggerCommandArguments>
+    <RemoteDebuggerWorkingDirectory>C:\TPMTool\</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>10.105.151.171</RemoteDebuggerServerName>
+    <DeploymentDirectory>C:\TPMTool\</DeploymentDirectory>
+    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>
